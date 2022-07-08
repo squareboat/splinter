@@ -27,7 +27,11 @@ func init() {
 
 	// Add SubCommands to Root Command
 	for _, cmd := range MigratorCommands {
+
 		rootCmd.AddCommand(cmd)
+		if cmd.Name() == "migrate" {
+			cmd.PersistentFlags().String("conn", "", "connection URI DB")
+		}
 	}
 
 	// Add Flags to Root Command
