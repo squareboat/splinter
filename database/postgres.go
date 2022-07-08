@@ -27,11 +27,11 @@ func (p *Postgres) RunMigration(ctx context.Context, migrations map[string]strin
 
 	for _, query := range migrations {
 		result, err := transaction.Exec(query)
+
 		if err != nil {
 			fmt.Println("err", err)
 			rollbackErr := transaction.Rollback()
 
-			fmt.Println("rolling back transaction")
 			if rollbackErr != nil {
 				fmt.Println("error rolling back", rollbackErr)
 			}
@@ -45,7 +45,6 @@ func (p *Postgres) RunMigration(ctx context.Context, migrations map[string]strin
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("queries executed successfully")
 	return nil
 }
 
