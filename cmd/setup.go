@@ -43,6 +43,7 @@ func onInit() {
 	if exists != nil {
 		viper.SetConfigFile(configFile)
 	} else {
+
 		fmt.Println("Config file not found.")
 		viper.SetConfigFile(".env")
 		ioutil.WriteFile(".env", []byte("SPLINTER_PATH=./migrations"), 0644)
@@ -50,6 +51,7 @@ func onInit() {
 	}
 	viper.AutomaticEnv()
 	err := viper.ReadInConfig()
+
 	if err != nil {
 		fmt.Printf("Error reading config file, %s\n", configFile)
 	}
