@@ -31,3 +31,9 @@ func createMigrationLocksTable() string {
 		);
 	`
 }
+
+func getMigrations() string {
+	return `
+		SELECT * FROM schema_migrations ORDER BY id DESC, migration_name ASC;
+	`
+}

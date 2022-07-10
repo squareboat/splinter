@@ -39,6 +39,11 @@ var MigratorCommands = []*cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
+
+			_, err = driver.CrossCheckMigrations(context.Background(), []string{})
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{

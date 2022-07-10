@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -23,7 +24,6 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 	// check if schema migrations table is present or not
 
 	query := tableExists(constants.SCHEMA_MIGRATIONS, constants.DEFAULT_SCHEMA_NAME)
-	fmt.Println("query ", query)
 
 	res, err := p.db.Query(query)
 	if err != nil {
@@ -78,6 +78,54 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 }
 
 func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []string) (map[string]string, error) {
+	// read from schema_migrations
+	// case 1 migration file does not exist in the table, then execute those migrations
+	// case 2 migration exists in database but does not exist in file system, then throw an error and mark the migration as dirty.
+	fmt.Println("cross checking migration files from DBc")
+	query := getMigrations()
+	isNewMigration := map[string]bool{}
+	for i := range migrationFiles {
+		isNewMigration[migrationFiles[i]] = true
+	}
+	sqlRows, err := p.db.Query(query)
+	if err != nil {
+		logger.Log.WithError(err)
+		return nil, err
+	}
+
+	fmt.Println("sqlRows", sqlRows)
+
+	migrations := []schemaMigration{}
+	for sqlRows.Next() {
+		var (
+			id            int64
+			migrationName string
+			batchNumber   int
+			createdAt     int64
+		)
+
+		if err = sqlRows.Scan(&id, &migrationName, &batchNumber, &createdAt); err != nil {
+			logger.Log.WithError(err)
+			return nil, err
+		}
+
+		migrations = append(migrations, schemaMigration{
+			migrationName: migrationName,
+			id:            id,
+			createdAt:     createdAt,
+			batchNumber:   batchNumber,
+		})
+
+	}
+
+	for i := range migrations {
+		migrationFromDB := migrations[i]
+		if _, ok := isNewMigration[migrationFromDB.migrationName]; !ok {
+			log.Fatal("migration file from DB not found in yout path")
+		}
+		isNewMigration[migrationFromDB.migrationName] = false
+	}
+
 	return nil, nil
 }
 
