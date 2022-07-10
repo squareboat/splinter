@@ -37,3 +37,21 @@ func getMigrations() string {
 		SELECT * FROM schema_migrations ORDER BY id DESC, migration_name ASC;
 	`
 }
+
+func insertMigrationLock() string {
+	return `
+		INSERT INTO migrations_lock (is_locked) VALUES (false);
+	`
+}
+
+func updateMigrationLock(lock bool) string {
+	return fmt.Sprintf(`
+		UPDATE migrations_lock SET is_locked = %v
+	`, lock)
+}
+
+func getLock(lockState bool) string {
+	return fmt.Sprintf(`
+		SELECT * FROM migrations_lock WHERE is_locked = %v;
+	`, lockState)
+}

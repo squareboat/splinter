@@ -4,6 +4,15 @@ import "context"
 
 // a common driver interface that all db drivers will have to implement
 type Driver interface {
+
+	// lock will update the migrations_lock table's entry
+	// if lock is already present that means some other process is executing a migraion or
+	// previos migrations errored out, either ways we cannot proceed with the migration
+	Lock() error
+
+	// unlock releases the lock we created.
+	Unlock() error
+
 	// intialize will check if schema_migrations and migration_locks are present or not
 	// if not it create those tables
 	Initialize(ctx context.Context) error

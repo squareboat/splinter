@@ -61,7 +61,7 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 	for migrationLockResponse.Next() {
 		var row interface{}
 		migrationLockResponse.Scan(&row)
-
+		fmt.Println("migration response ", row)
 		if tableExists, ok := row.(bool); ok {
 			if !tableExists {
 				_, err = p.db.Exec(createMigrationLocksTable())
@@ -69,6 +69,14 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 					logger.Log.WithError(err).Error("error creating migrations lock table")
 					return err
 				}
+
+				// insert lock row
+				_, err = p.db.Exec(insertMigrationLock())
+				if err != nil {
+					logger.Log.WithError(err)
+					return err
+				}
+
 			}
 		}
 
@@ -161,6 +169,52 @@ func (p *Postgres) RunMigrations(ctx context.Context, migrations map[string]stri
 }
 
 func (p *Postgres) Validate(migrations []string) error {
+	return nil
+}
+
+func (p *Postgres) Lock() error {
+	// check if migration is unlocked
+	query := getLock(true)
+	sqlRows, err := p.db.Query(query)
+	if err != nil {
+		logger.Log.WithError(err)
+		return err
+	}
+
+	for sqlRows.Next() {
+		var (
+			id       int
+			isLocked bool
+		)
+
+		err = sqlRows.Scan(&id, &isLocked)
+		if err != nil {
+			logger.Log.WithError(err)
+			return err
+		}
+
+		if isLocked {
+			logger.Log.Warn("migration table is already locked")
+			logger.Log.Fatal("Can't take lock to run migrations: Migration table is already locked")
+		}
+	}
+	// set is lock to true
+
+	query = updateMigrationLock(true)
+	sqlRes, err := p.db.Exec(query)
+	if err != nil {
+		logger.Log.Fatal(err)
+	}
+
+	rowsAffected, err := sqlRes.RowsAffected()
+	if err != nil {
+		logger.Log.Warn(err)
+	}
+	fmt.Println("rows affected", rowsAffected)
+	return nil
+}
+
+func (p *Postgres) Unlock() error {
 	return nil
 }
 
