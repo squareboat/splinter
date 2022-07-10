@@ -49,6 +49,11 @@ var MigratorCommands = []*cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
+
+			err = driver.Unlock()
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{

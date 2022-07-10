@@ -215,6 +215,25 @@ func (p *Postgres) Lock() error {
 }
 
 func (p *Postgres) Unlock() error {
+	// if lock is not present throw error
+
+	query := updateMigrationLock(false)
+	sqlRes, err := p.db.Exec(query)
+	if err != nil {
+		logger.Log.WithError(err).Error()
+		return err
+	}
+	rowsAffected, err := sqlRes.RowsAffected()
+
+	if err != nil {
+		logger.Log.WithError(err).Error()
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("unable to remove lock. no locks found")
+	}
+	logger.Log.Info("migration lock removed successfully")
 	return nil
 }
 
