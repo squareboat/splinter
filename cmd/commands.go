@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"log"
 
+	"github.com/the-e3n/migrator/database/postgres"
+	"github.com/the-e3n/migrator/logger"
 	"github.com/the-e3n/migrator/parser"
 
 	"github.com/spf13/cobra"
@@ -16,11 +20,25 @@ var MigratorCommands = []*cobra.Command{
 		Short:   "Run all the migration.",
 		Long:    `Run all the migration that are pending in the system to database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			querys := parser.ParseAllMigrations()
-			for _, query := range querys {
-				fmt.Println(query.Up)
+			// querys := parser.ParseAllMigrations()
+			// for _, query := range querys {
+			// 	fmt.Println(query.Up)
+			// }
+			connURL, err := cmd.Flags().GetString("conn")
+			if err != nil {
+				logger.Log.WithError(err)
+				return
 			}
 
+			driver, err := postgres.NewPostgresDB(connURL)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+			err = driver.Initialize(context.Background())
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	{
