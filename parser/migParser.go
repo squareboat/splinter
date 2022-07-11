@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-	"github.com/the-e3n/migrator/constants"
+	"github.com/the-e3n/splinter/constants"
+	"github.com/the-e3n/splinter/logger"
 )
 
-func MigParser(fileName string) ([]string, []string, error) {
+func MigParser(filepath string) ([]string, []string, error) {
 	var upArr []string
 	var downArr []string
 	var isUp bool
-	file, err := os.Open(fileName)
+	file, err := os.Open(filepath)
 	if err != nil {
 		return upArr, downArr, err
 	}
@@ -59,8 +60,8 @@ type QueriesToRun struct {
 	Down []string
 }
 
-func ParseAllMigrations() []QueriesToRun {
-	querys := []QueriesToRun{}
+func ParseAllMigrations() map[string]QueriesToRun {
+	querys := map[string]QueriesToRun{}
 	migrationPath := viper.GetString(constants.SPLINTER_PATH)
 	files, _ := ioutil.ReadDir(migrationPath)
 	sort.SliceStable(files, func(i, j int) bool {
@@ -78,22 +79,38 @@ func ParseAllMigrations() []QueriesToRun {
 		}
 		query.Up = append(query.Up, up...)
 		query.Down = append(query.Down, down...)
-		querys = append(querys, query)
+		querys[file.Name()] = query
 	}
 	return querys
 }
-func ParseRollbackMigration() ([]string, error) {
+
+func ParseRollbackMigration(migration_name string) ([]string, error) {
+	filePath := findMigrationFilePath(migration_name)
+	exists, _ := os.Stat(filePath)
+	if exists != nil {
+		_, down, err := MigParser(filePath)
+		return down, err
+	}
+	logger.Log.Fatal("Migration file not found")
+	os.Exit(1)
+	return nil, nil
+}
+
+func findMigrationFilePath(name string) string {
 	migrationPath := viper.GetString(constants.SPLINTER_PATH)
 	files, _ := ioutil.ReadDir(migrationPath)
-	sort.SliceStable(files, func(i, j int) bool {
-		return files[i].Name() < files[j].Name()
-	})
-	filePath := fmt.Sprintf("%s/%s", migrationPath, files[len(files)-1].Name())
-	_, down, err := MigParser(filePath)
-	return down, err
+	for _, file := range files {
+		if file.Name() == name {
+			return fmt.Sprintf("%s/%s", migrationPath, file.Name())
+		}
+	}
+	return ""
 }
 
 func CreateMigrationFile(names []string) {
+	viper.AddConfigPath("./")
+	viper.SetConfigFile("test.json")
+	logger.Log.Info(viper.AllSettings())
 	for _, name := range names {
 		filename := fmt.Sprintf("%s/%d_%s.sql", viper.GetString(constants.SPLINTER_PATH), time.Now().UnixMicro(), name)
 		file, err := os.Create(filename)

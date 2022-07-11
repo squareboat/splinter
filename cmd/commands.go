@@ -1,59 +1,58 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"log"
 
-	"github.com/the-e3n/migrator/database/postgres"
-	"github.com/the-e3n/migrator/logger"
-	"github.com/the-e3n/migrator/parser"
+	"github.com/the-e3n/splinter/logger"
+	"github.com/the-e3n/splinter/parser"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var MigratorCommands = []*cobra.Command{
-	{
+var MigratorCommands = map[string]*cobra.Command{
+	"migrate": {
 		Use:     "migrate",
-		Aliases: []string{"up", "m"},
+		Aliases: []string{"up"},
 		Short:   "Run all the migration.",
 		Long:    `Run all the migration that are pending in the system to database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// querys := parser.ParseAllMigrations()
-			// for _, query := range querys {
-			// 	fmt.Println(query.Up)
+			querys := parser.ParseAllMigrations()
+			for key, query := range querys {
+				fmt.Println(key, query)
+				logger.Log.Info(key)
+			}
+			// connURL, err := cmd.Flags().GetString("conn")
+			// if err != nil {
+			// 	logger.Log.WithError(err)
+			// 	return
 			// }
-			connURL, err := cmd.Flags().GetString("conn")
-			if err != nil {
-				logger.Log.WithError(err)
-				return
-			}
 
-			driver, err := postgres.NewPostgresDB(connURL)
-			if err != nil {
-				log.Fatal(err)
-				return
-			}
-			err = driver.Initialize(context.Background())
-			if err != nil {
-				log.Fatal(err)
-			}
+			// driver, err := postgres.NewPostgresDB(connURL)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// 	return
+			// }
+			// err = driver.Initialize(context.Background())
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
 		},
 	},
-	{
-		Use:   "rollback",
-		Short: "Rollback all the migration.",
-		Long:  `Rollback all the migration that are pending in the system to database.`,
+	"rollback": {
+		Use:     "rollback",
+		Short:   "Rollback all the migration.",
+		Aliases: []string{"down"},
+		Long:    `Rollback all the migration that are pending in the system to database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			queries, err := parser.ParseRollbackMigration()
+			queries, err := parser.ParseRollbackMigration("filename")
 			if err != nil {
 				fmt.Println(err)
 			}
 			fmt.Println(queries)
 		},
 	},
-	{
+	"create": {
 		Use:     "create",
 		Short:   "Create a new migration file.",
 		Long:    `Create a new migration file.`,
@@ -67,18 +66,26 @@ var MigratorCommands = []*cobra.Command{
 			parser.CreateMigrationFile(args)
 		},
 	},
-	{
-		Use:     "show",
+	"config": {
+		Use:     "config",
 		Short:   "Show specified config value.",
 		Long:    `Show specified config value.`,
 		Example: "splinter show <key1> <key2> <key3>",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
-				cmd.Help()
+				fmt.Println(viper.AllSettings())
 			}
 			for _, arg := range args {
 				fmt.Printf("Value of %s :- %s", arg, viper.GetString(arg))
 			}
 		},
 	},
+}
+
+func SetFlags(rootCmd *cobra.Command) {
+	// Migrate Command Flags
+	MigratorCommands["migrate"].PersistentFlags().String("conn", "", "connection URI DB")
+
+	// Global Flags
+	rootCmd.PersistentFlags().StringVar(&configFile, "config", ".env", "Path of config file [env|YAML|JSON|TOML|INI]")
 }
