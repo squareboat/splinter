@@ -138,7 +138,7 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 }
 
 // runs given set of SQL
-func (p *Postgres) RunMigrations(ctx context.Context, migrations map[string]string) error {
+func (p *Postgres) Migrate(ctx context.Context, migrations map[string]string) error {
 	transaction, err := p.db.BeginTx(ctx, nil)
 
 	if err != nil {

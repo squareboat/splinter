@@ -22,5 +22,5 @@ type Driver interface {
 	CrossCheckMigrations(ctx context.Context, migrationFiles []string) (map[string]string, error)
 
 	// RunMigration runs a given set of migrations and stores the migration file names in schema_migrations
-	RunMigrations(ctx context.Context, migrations map[string]string) error
+	Migrate(ctx context.Context, migrations map[string]string) error
 }
