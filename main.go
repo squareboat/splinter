@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/the-e3n/migrator/cmd"
+	"github.com/the-e3n/splinter/cmd"
 )
 
 func main() {

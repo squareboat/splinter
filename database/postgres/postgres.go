@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	_ "github.com/lib/pq"
-	"github.com/the-e3n/migrator/constants"
-	"github.com/the-e3n/migrator/database"
-	"github.com/the-e3n/migrator/logger"
+	"github.com/the-e3n/splinter/constants"
+	"github.com/the-e3n/splinter/database"
+	"github.com/the-e3n/splinter/logger"
 )
 
 type Postgres struct {

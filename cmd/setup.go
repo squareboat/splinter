@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/the-e3n/splinter/logger"
 )
 
 var rootCmd = &cobra.Command{
@@ -27,32 +26,30 @@ func init() {
 
 	// Add SubCommands to Root Command
 	for _, cmd := range MigratorCommands {
-
 		rootCmd.AddCommand(cmd)
-		if cmd.Name() == "migrate" {
-			cmd.PersistentFlags().String("conn", "", "connection URI DB")
-		}
 	}
-
-	// Add Flags to Root Command
-	rootCmd.PersistentFlags().StringVar(&configFile, "config", ".env", "Path of config file [env|YAML|JSON|TOML|INI]")
+	SetFlags(rootCmd)
 }
 
 func onInit() {
+	wd, _ := os.Getwd()
+	logger.Log.Info("Current working directory: ", wd)
 	exists, _ := os.Stat(configFile)
+	logger.Log.Info("Config file: ", configFile)
+	logger.Log.Info("Config file Exists: ", exists)
 	if exists != nil {
 		viper.SetConfigFile(configFile)
+		err := viper.ReadInConfig()
+		if err != nil {
+			logger.Log.Fatal("Error reading config file, " + configFile)
+		}
 	} else {
-
-		fmt.Println("Config file not found.")
-		viper.SetConfigFile(".env")
-		ioutil.WriteFile(".env", []byte("SPLINTER_PATH=./migrations"), 0644)
-		fmt.Println("Created a default config file.")
+		logger.Log.Warn("Config file not found.")
+		os.Exit(1)
+		// fmt.Println("Created a default config file.")
+		// ioutil.WriteFile(".env", []byte("SPLINTER_PATH=./migrations"), 0644)
+		// viper.SetConfigFile(".env")
 	}
 	viper.AutomaticEnv()
-	err := viper.ReadInConfig()
 
-	if err != nil {
-		fmt.Printf("Error reading config file, %s\n", configFile)
-	}
 }
