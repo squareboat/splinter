@@ -94,6 +94,6 @@ func CreateMigrationFile(names []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer file.Close()
+		file.Close()
 	}
 }
