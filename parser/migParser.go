@@ -28,25 +28,28 @@ func GetMigrationFileNames() []string {
 	return migrationFileNames
 }
 
-func FileParser(lines []string, down bool) []string {
+func fileParser(lines []string, down bool) []string {
 	var upArr []string
 	var downArr []string
 	var isUp bool
 	var parts []string
 	var remainingString string
 	for _, text := range lines {
-		if strings.ToLower(text) == "[down]" {
-			isUp = false
-			continue
-		} else if strings.ToLower(text) == "[up]" {
+		if strings.ToLower(text) == constants.MIGRATION_UP_IDENTIFIER {
 			isUp = true
+			continue
+		} else if strings.ToLower(text) == constants.MIGRATION_DOWN_IDENTIFIER {
+			if !down {
+				return upArr
+			}
+			isUp = false
 			continue
 		}
 		text = strings.Trim(text, " \n")
 		if text == "" {
 			continue
 		}
-		parts = StringParser(text, &remainingString)
+		parts = stringParser(text, &remainingString)
 		if isUp {
 			upArr = append(upArr, parts...)
 		} else {
@@ -60,7 +63,7 @@ func FileParser(lines []string, down bool) []string {
 	return upArr
 }
 
-func StringParser(text string, remainingString *string) []string {
+func stringParser(text string, remainingString *string) []string {
 	var parsed []string
 	var currIdx int = strings.Index(text, ";")
 	for {
@@ -83,6 +86,19 @@ func StringParser(text string, remainingString *string) []string {
 		}
 	}
 	return parsed
+}
+
+func ParseFile(filename string, mode string) ([]string, error) {
+	filePath := fmt.Sprintf("%s/%s", viper.GetString(constants.SPLINTER_PATH), filename)
+	file, err := os.ReadFile(filePath)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error reading file")
+		return nil, err
+	}
+	strs := strings.Split(string(file), "\n")
+
+	queries := fileParser(strs, mode == constants.MIGRATION_DOWN)
+	return queries, nil
 }
 
 func CreateMigrationFile(names []string) {
