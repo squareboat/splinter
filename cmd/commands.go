@@ -19,17 +19,14 @@ var MigratorCommands = map[string]*cobra.Command{
 		Short:   "Run all the migration.",
 		Long:    `Run all the migration that are pending in the system to database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			querys := parser.ParseAllMigrations()
-			for key, query := range querys {
-				fmt.Println(key, query)
-				logger.Log.Info(key)
-			}
+
 			connURL, err := cmd.Flags().GetString("conn")
 			if err != nil {
 				logger.Log.WithError(err)
 				return
 			}
 			runner.Postgres(connURL, constants.MIGRATION_UP)
+			logger.Log.Info("Migrate Command")
 
 		},
 	},
@@ -39,11 +36,7 @@ var MigratorCommands = map[string]*cobra.Command{
 		Aliases: []string{"down"},
 		Long:    `Rollback all the migration that are pending in the system to database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			queries, err := parser.ParseRollbackMigration("filename")
-			if err != nil {
-				fmt.Println(err)
-			}
-			fmt.Println(queries)
+			logger.Log.Info("Running rollback")
 		},
 	},
 	"create": {
