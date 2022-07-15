@@ -165,7 +165,7 @@ func (p *Postgres) Migrate(ctx context.Context, migrations map[string]string) er
 
 	err = transaction.Commit()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return nil
 }
