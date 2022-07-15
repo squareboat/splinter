@@ -1,12 +1,10 @@
 package parser
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
@@ -15,19 +13,28 @@ import (
 	"github.com/the-e3n/splinter/logger"
 )
 
-func MigParser(filepath string) ([]string, []string, error) {
+func GetMigrationFileNames() []string {
+	var migrationFileNames []string
+	files, err := ioutil.ReadDir(viper.GetString(constants.SPLINTER_PATH))
+	if err != nil {
+		logger.Log.Error(err)
+		return migrationFileNames
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), constants.FILE_EXTENSION) {
+			migrationFileNames = append(migrationFileNames, file.Name())
+		}
+	}
+	return migrationFileNames
+}
+
+func FileParser(lines []string, down bool) []string {
 	var upArr []string
 	var downArr []string
 	var isUp bool
-	file, err := os.Open(filepath)
-	if err != nil {
-		return upArr, downArr, err
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	var currentString string
-	for scanner.Scan() {
-		text := scanner.Text()
+	var parts []string
+	var remainingString string
+	for _, text := range lines {
 		if strings.ToLower(text) == "[down]" {
 			isUp = false
 			continue
@@ -39,80 +46,48 @@ func MigParser(filepath string) ([]string, []string, error) {
 		if text == "" {
 			continue
 		}
-		idx := strings.Index(text, ";")
-		if idx == -1 {
-			currentString += text
+		parts = StringParser(text, &remainingString)
+		if isUp {
+			upArr = append(upArr, parts...)
 		} else {
-			currentString += text + " "
-			if isUp {
-				upArr = append(upArr, currentString)
-			} else {
-				downArr = append(downArr, currentString)
-			}
-			currentString = ""
+			downArr = append(downArr, parts...)
 		}
+
 	}
-	return upArr, downArr, nil
+	if down {
+		return downArr
+	}
+	return upArr
 }
 
-type QueriesToRun struct {
-	Up   []string
-	Down []string
-}
-
-func ParseAllMigrations() map[string]QueriesToRun {
-	querys := map[string]QueriesToRun{}
-	migrationPath := viper.GetString(constants.SPLINTER_PATH)
-	files, _ := ioutil.ReadDir(migrationPath)
-	sort.SliceStable(files, func(i, j int) bool {
-		return files[i].Name() < files[j].Name()
-	})
-	for _, file := range files {
-		fmt.Printf("Parsing :- %s\n", file.Name())
-		if file.IsDir() {
-			continue
+func StringParser(text string, remainingString *string) []string {
+	var parsed []string
+	var currIdx int = strings.Index(text, ";")
+	for {
+		if currIdx == -1 {
+			tempStr := text + *remainingString
+			remainingString = &tempStr
+			break
 		}
-		query := QueriesToRun{}
-		up, down, err := MigParser(migrationPath + "/" + file.Name())
-		if err != nil {
-			log.Fatal(err)
+		str := text[:currIdx+1]
+		if remainingString != nil && *remainingString != "" {
+			tempStr := *remainingString + " " + str
+			remainingString = &tempStr
 		}
-		query.Up = append(query.Up, up...)
-		query.Down = append(query.Down, down...)
-		querys[file.Name()] = query
-	}
-	return querys
-}
-
-func ParseRollbackMigration(migration_name string) ([]string, error) {
-	filePath := findMigrationFilePath(migration_name)
-	exists, _ := os.Stat(filePath)
-	if exists != nil {
-		_, down, err := MigParser(filePath)
-		return down, err
-	}
-	logger.Log.Fatal("Migration file not found")
-	os.Exit(1)
-	return nil, nil
-}
-
-func findMigrationFilePath(name string) string {
-	migrationPath := viper.GetString(constants.SPLINTER_PATH)
-	files, _ := ioutil.ReadDir(migrationPath)
-	for _, file := range files {
-		if file.Name() == name {
-			return fmt.Sprintf("%s/%s", migrationPath, file.Name())
+		parsed = append(parsed, str)
+		text = text[currIdx+1:]
+		currIdx = strings.Index(text, ";")
+		if remainingString != nil {
+			tempStr := ""
+			remainingString = &tempStr
 		}
 	}
-	return ""
+	return parsed
 }
 
 func CreateMigrationFile(names []string) {
-	viper.AddConfigPath("./")
-	viper.SetConfigFile("test.json")
-	logger.Log.Info(viper.AllSettings())
 	for _, name := range names {
-		filename := fmt.Sprintf("%s/%d_%s.sql", viper.GetString(constants.SPLINTER_PATH), time.Now().UnixMicro(), name)
+		filename := fmt.Sprintf("%s/%d_%s%s", viper.GetString(constants.SPLINTER_PATH), time.Now().UnixMicro(), name, constants.FILE_EXTENSION)
 		file, err := os.Create(filename)
 		file.Write([]byte("[up]\n\n"))
 		file.Write([]byte("[down]\n\n"))
