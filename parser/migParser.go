@@ -15,7 +15,7 @@ import (
 	"github.com/the-e3n/splinter/logger"
 )
 
-func MigParser(filepath string) ([]string, []string, error) {
+func MigParser(filepath string,) ([]string, []string, error) {
 	var upArr []string
 	var downArr []string
 	var isUp bool
@@ -119,6 +119,6 @@ func CreateMigrationFile(names []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer file.Close()
+		file.Close()
 	}
 }

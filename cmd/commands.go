@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/logger"
 	"github.com/the-e3n/splinter/parser"
+	"github.com/the-e3n/splinter/runner"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,21 +24,13 @@ var MigratorCommands = map[string]*cobra.Command{
 				fmt.Println(key, query)
 				logger.Log.Info(key)
 			}
-			// connURL, err := cmd.Flags().GetString("conn")
-			// if err != nil {
-			// 	logger.Log.WithError(err)
-			// 	return
-			// }
+			connURL, err := cmd.Flags().GetString("conn")
+			if err != nil {
+				logger.Log.WithError(err)
+				return
+			}
+			runner.Postgres(connURL, constants.MIGRATION_UP)
 
-			// driver, err := postgres.NewPostgresDB(connURL)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// 	return
-			// }
-			// err = driver.Initialize(context.Background())
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
 		},
 	},
 	"rollback": {

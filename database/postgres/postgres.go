@@ -16,8 +16,9 @@ import (
 
 type Postgres struct {
 	// conn *sql.Conn
-	db     *sql.DB
-	dbName string
+	db            *sql.DB
+	dbName        string
+	migrationType string
 }
 
 func (p *Postgres) Initialize(ctx context.Context) error {
@@ -64,6 +65,7 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 		fmt.Println("migration response ", row)
 		if tableExists, ok := row.(bool); ok {
 			if !tableExists {
+
 				_, err = p.db.Exec(createMigrationLocksTable())
 				if err != nil {
 					logger.Log.WithError(err).Error("error creating migrations lock table")
@@ -237,7 +239,7 @@ func (p *Postgres) Unlock() error {
 	return nil
 }
 
-func NewPostgresDB(connectionURL string) (database.Driver, error) {
+func NewPostgresDB(connectionURL, migrationType string) (database.Driver, error) {
 	// parse connection URL
 	driver := Postgres{}
 	db, err := sql.Open("postgres", connectionURL)
@@ -247,6 +249,9 @@ func NewPostgresDB(connectionURL string) (database.Driver, error) {
 		panic(err)
 	}
 
+	if migrationType == "" {
+		return nil, errors.New("invalid migration type")
+	}
 	var dbName string
 
 	// get dbname from connection url
@@ -268,6 +273,7 @@ func NewPostgresDB(connectionURL string) (database.Driver, error) {
 
 	driver.db = db
 	driver.dbName = dbName
+	driver.migrationType = migrationType
 
 	return &driver, nil
 }
