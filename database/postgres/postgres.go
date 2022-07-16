@@ -12,13 +12,15 @@ import (
 	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/database"
 	"github.com/the-e3n/splinter/logger"
+	"github.com/the-e3n/splinter/parser"
 )
 
 type Postgres struct {
 	// conn *sql.Conn
-	db            *sql.DB
-	dbName        string
-	migrationType string
+	db                *sql.DB
+	dbName            string
+	migrationType     string
+	latestBatchNumber int
 }
 
 func (p *Postgres) Initialize(ctx context.Context) error {
@@ -87,7 +89,7 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []string) (map[string]string, error) {
+func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []string) ([]string, error) {
 	// read from schema_migrations
 	// case 1 migration file does not exist in the table, then execute those migrations
 	// case 2 migration exists in database but does not exist in file system, then throw an error and mark the migration as dirty.
@@ -104,7 +106,7 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 	}
 
 	fmt.Println("sqlRows", sqlRows)
-
+	maxBatchNumner := 1
 	migrations := []schemaMigration{}
 	for sqlRows.Next() {
 		var (
@@ -119,6 +121,10 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 			return nil, err
 		}
 
+		if batchNumber > maxBatchNumner {
+			maxBatchNumner = batchNumber
+		}
+
 		migrations = append(migrations, schemaMigration{
 			migrationName: migrationName,
 			id:            id,
@@ -127,6 +133,7 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 		})
 
 	}
+	p.latestBatchNumber = maxBatchNumner
 
 	for i := range migrations {
 		migrationFromDB := migrations[i]
@@ -135,12 +142,19 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 		}
 		isNewMigration[migrationFromDB.migrationName] = false
 	}
+	newMigrations := []string{}
+	for fileName, isNew := range isNewMigration {
+		if isNew {
+			newMigrations = append(newMigrations, fileName)
+		}
+	}
 
-	return nil, nil
+	fmt.Println("New migrations", newMigrations)
+	return newMigrations, nil
 }
 
 // runs given set of SQL
-func (p *Postgres) Migrate(ctx context.Context, migrations map[string]string) error {
+func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 	transaction, err := p.db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -148,26 +162,66 @@ func (p *Postgres) Migrate(ctx context.Context, migrations map[string]string) er
 		return err
 	}
 
-	for _, query := range migrations {
-		_, err := transaction.Exec(query)
+	for _, filename := range migrationFiles {
 
+		// get queries in the file
+		queries, err := parser.ParseFile(filename, p.migrationType)
 		if err != nil {
 			logger.Log.WithError(err)
-			rollbackErr := transaction.Rollback()
-
-			if rollbackErr != nil {
-				logger.Log.WithError(rollbackErr).Error("error rolling back")
-			}
-
+			transaction.Rollback()
 			return err
 		}
+
+		logger.Log.Info("Executing from file **", filename)
+		fmt.Println("Queries ", queries)
+
+		for i := range queries {
+			q := queries[i]
+
+			_, err = transaction.Exec(q)
+			if err != nil {
+
+				logger.Log.Warn("rolling back transaction")
+				logger.Log.Error(err)
+				logger.Log.Error("Migration file ", filename, " \nQuery : ", q)
+				rollbackErr := transaction.Rollback()
+
+				if rollbackErr != nil {
+					logger.Log.WithError(rollbackErr).Error("error rolling back")
+				}
+
+				return err
+			}
+		}
+
 	}
+
+	// updating schema migrations
+	_, err = transaction.Exec(p.updateSchemaMigrations(migrationFiles))
+	if err != nil {
+		logger.Log.WithError(err)
+		transaction.Rollback()
+		return err
+	}
+
+	logger.Log.Info("Commiting transaction")
 
 	err = transaction.Commit()
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.WithError(err)
+		return err
 	}
 	return nil
+}
+
+func (p *Postgres) updateSchemaMigrations(migrationFiles []string) string {
+	if p.migrationType == constants.MIGRATION_UP {
+		return insertSchemaMigrations(migrationFiles, p.latestBatchNumber+1)
+	} else if p.migrationType == constants.MIGRATION_DOWN {
+		return deleteSchemaMigrations(p.latestBatchNumber)
+	}
+
+	return ""
 }
 
 func (p *Postgres) Validate(migrations []string) error {

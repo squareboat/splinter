@@ -19,13 +19,7 @@ var MigratorCommands = map[string]*cobra.Command{
 		Short:   "Run all the migration.",
 		Long:    `Run all the migration that are pending in the system to database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			connURL, err := cmd.Flags().GetString("conn")
-			if err != nil {
-				logger.Log.WithError(err)
-				return
-			}
-			runner.Postgres(connURL, constants.MIGRATION_UP)
-
+			runner.Postgres("postgresql://pranjalverma:@127.0.0.1/migrations?sslmode=disable", constants.MIGRATION_UP)
 		},
 	},
 	"rollback": {
