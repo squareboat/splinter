@@ -20,13 +20,27 @@ func Postgres(connURL, migrationType string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// get migration files TODO: Handle error
+
+	// place locks
+	err = driver.Lock()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// get migration files
 	migrationFiles, _ := parser.GetMigrationFileNames()
 	newMigrations, err := driver.CrossCheckMigrations(ctx, migrationFiles)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = driver.Migrate(ctx, newMigrations)
+	if len(newMigrations) > 0 {
+		err = driver.Migrate(ctx, newMigrations)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	err = driver.Unlock()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -106,7 +106,7 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 	}
 
 	fmt.Println("sqlRows", sqlRows)
-	maxBatchNumner := 1
+	maxBatchNumner := 0
 	migrations := []schemaMigration{}
 	for sqlRows.Next() {
 		var (
@@ -216,7 +216,9 @@ func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 
 func (p *Postgres) updateSchemaMigrations(migrationFiles []string) string {
 	if p.migrationType == constants.MIGRATION_UP {
-		return insertSchemaMigrations(migrationFiles, p.latestBatchNumber+1)
+		query := insertSchemaMigrations(migrationFiles, p.latestBatchNumber+1)
+		logger.Log.Info("update ", query)
+		return query
 	} else if p.migrationType == constants.MIGRATION_DOWN {
 		return deleteSchemaMigrations(p.latestBatchNumber)
 	}

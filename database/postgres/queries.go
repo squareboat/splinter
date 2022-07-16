@@ -65,7 +65,7 @@ func insertSchemaMigrations(migrationFiles []string, batchNumber int) string {
 	query.WriteString("INSERT INTO schema_migrations (migration_name, batch_number, created_at)  VALUES ")
 
 	for i := range migrationFiles {
-		query.WriteString(fmt.Sprintf("( %v , %v, %v)", migrationFiles[i], batchNumber, time.Now().Unix()))
+		query.WriteString(fmt.Sprintf("( '%v' , %v, %v)", migrationFiles[i], batchNumber, time.Now().Unix()))
 
 		if i < len(migrationFiles)-1 {
 			query.WriteString(" , ")
