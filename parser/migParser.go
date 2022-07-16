@@ -8,24 +8,24 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/the-e3n/splinter/config"
 	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/logger"
 )
 
-func GetMigrationFileNames() []string {
+func GetMigrationFileNames() ([]string, error) {
 	var migrationFileNames []string
-	files, err := ioutil.ReadDir(viper.GetString(constants.SPLINTER_PATH))
+	files, err := ioutil.ReadDir(config.GetMigrationsPath())
 	if err != nil {
 		logger.Log.Error(err)
-		return migrationFileNames
+		return migrationFileNames, err
 	}
 	for _, file := range files {
-		if strings.HasSuffix(file.Name(), constants.FILE_EXTENSION) {
+		if strings.HasSuffix(file.Name(), constants.DEFAULT_FILE_EXTENSION) {
 			migrationFileNames = append(migrationFileNames, file.Name())
 		}
 	}
-	return migrationFileNames
+	return migrationFileNames, nil
 }
 
 func fileParser(lines []string, down bool) []string {
@@ -64,32 +64,36 @@ func fileParser(lines []string, down bool) []string {
 }
 
 func stringParser(text string, remainingString *string) []string {
+	if remainingString == nil {
+		logger.Log.Warn("remainingString is nil")
+		return []string{}
+	}
 	var parsed []string
 	var currIdx int = strings.Index(text, ";")
 	for {
+
 		if currIdx == -1 {
-			tempStr := text + *remainingString
-			remainingString = &tempStr
-			break
+			*remainingString = *remainingString + " " + text
+			return parsed
 		}
+
 		str := text[:currIdx+1]
 		if remainingString != nil && *remainingString != "" {
-			tempStr := *remainingString + " " + str
-			remainingString = &tempStr
+			str = *remainingString + " " + str
 		}
+
 		parsed = append(parsed, str)
 		text = text[currIdx+1:]
 		currIdx = strings.Index(text, ";")
 		if remainingString != nil {
-			tempStr := ""
-			remainingString = &tempStr
+			emptStr := ""
+			remainingString = &emptStr
 		}
 	}
-	return parsed
 }
 
 func ParseFile(filename string, mode string) ([]string, error) {
-	filePath := fmt.Sprintf("%s/%s", viper.GetString(constants.SPLINTER_PATH), filename)
+	filePath := fmt.Sprintf("%s/%s", config.GetMigrationsPath(), filename)
 	file, err := os.ReadFile(filePath)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error reading file")
@@ -103,13 +107,13 @@ func ParseFile(filename string, mode string) ([]string, error) {
 
 func CreateMigrationFile(names []string) {
 	for _, name := range names {
-		filename := fmt.Sprintf("%s/%d_%s%s", viper.GetString(constants.SPLINTER_PATH), time.Now().UnixMicro(), name, constants.FILE_EXTENSION)
+		filename := fmt.Sprintf("%s/%d_%s%s", config.GetMigrationsPath(), time.Now().UnixMicro(), name, constants.DEFAULT_FILE_EXTENSION)
 		file, err := os.Create(filename)
-		file.Write([]byte("[up]\n\n"))
-		file.Write([]byte("[down]\n\n"))
 		if err != nil {
 			log.Fatal(err)
 		}
+		file.Write([]byte("[up]\n\n"))
+		file.Write([]byte("[down]\n\n"))
 		file.Close()
 	}
 }
