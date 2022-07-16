@@ -152,7 +152,7 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 
 	fmt.Println("New migrations", newMigrations)
 	sort.Slice(newMigrations, func(i, j int) bool {
-		return newMigrations[j] < newMigrations[i]
+		return newMigrations[j] > newMigrations[i]
 
 	})
 	return newMigrations, nil
