@@ -78,5 +78,5 @@ func insertSchemaMigrations(migrationFiles []string, batchNumber int) string {
 }
 
 func deleteSchemaMigrations(batch int) string {
-	return fmt.Sprint("DELTE FROM schema_migrations WHERE batch = %v", batch)
+	return fmt.Sprintf("DELTE FROM schema_migrations WHERE batch = %v", batch)
 }
