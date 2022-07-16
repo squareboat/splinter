@@ -20,8 +20,8 @@ func Postgres(connURL, migrationType string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// get migration files
-	migrationFiles := parser.GetMigrationFileNames()
+	// get migration files TODO: Handle error
+	migrationFiles, _ := parser.GetMigrationFileNames()
 	newMigrations, err := driver.CrossCheckMigrations(ctx, migrationFiles)
 	if err != nil {
 		log.Fatal(err)

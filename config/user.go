@@ -27,7 +27,7 @@ func LoadUserConfig() {
 	userConfig.dbname = utils.GetStringFromFlagOrConfig(constants.DB_NAME, constants.DB_NAME_FLAG)
 	userConfig.driver = utils.GetStringFromFlagOrConfig(constants.DRIVER, constants.DRIVER_FLAG)
 	userConfig.uri = utils.GetStringFromFlagOrConfig(constants.URI, constants.URI_FLAG)
-	userConfig.migrations_path = utils.GetStringFromFlagOrConfig(constants.MIGRATION_PATH, constants.MIGRATION_PATH_FLAG)
+	userConfig.migrations_path = utils.GetStringFromFlagOrConfig(constants.MIGRATIONS_PATH, constants.MIGRATION_PATH_FLAG)
 }
 
 func GetDbHost() string {

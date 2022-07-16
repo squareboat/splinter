@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/the-e3n/splinter/config"
 	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/logger"
 	"github.com/the-e3n/splinter/parser"
@@ -34,7 +35,7 @@ var MigratorCommands = map[string]*cobra.Command{
 				logger.Log.Info(query)
 			}
 
-			runner.Postgres("postgresql://pranjalverma:@127.0.0.1/migrations?sslmode=disable", constants.MIGRATION_UP)
+			runner.Postgres(config.GetDbUri(), constants.MIGRATION_UP)
 		},
 	},
 	"rollback": {

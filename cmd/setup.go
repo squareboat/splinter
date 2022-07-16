@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -56,13 +57,13 @@ func onInit() {
 		logger.Log.Fatal("User Provided Config file not found.")
 		os.Exit(1)
 	}
-	config.LoadUserConfig()
-	MergeSplinterConfig()
-	CreateMigrationsPathIfNotExists()
 	logger.Log.Info()
 	for k, v := range viper.AllSettings() {
 		logger.Log.Infof("Config - %s : %#v", k, v)
 	}
+	config.LoadUserConfig()
+	MergeSplinterConfig()
+	CreateMigrationsPathIfNotExists()
 
 }
 
@@ -83,6 +84,9 @@ func MergeSplinterConfig() {
 
 func CreateMigrationsPathIfNotExists() {
 	migrationsPath := config.GetMigrationsPath()
+	if migrationsPath == "" {
+		log.Fatal("Migrations path is not set.")
+	}
 	_, err := os.Stat(migrationsPath)
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(migrationsPath, 0755)

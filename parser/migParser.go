@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/viper"
 	"github.com/the-e3n/splinter/config"
 	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/logger"
@@ -16,7 +15,7 @@ import (
 
 func GetMigrationFileNames() ([]string, error) {
 	var migrationFileNames []string
-	files, err := ioutil.ReadDir(viper.GetString(constants.MIGRATION_PATH))
+	files, err := ioutil.ReadDir(config.GetMigrationsPath())
 	if err != nil {
 		logger.Log.Error(err)
 		return migrationFileNames, err
