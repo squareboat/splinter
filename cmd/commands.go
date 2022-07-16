@@ -7,6 +7,7 @@ import (
 	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/logger"
 	"github.com/the-e3n/splinter/parser"
+	"github.com/the-e3n/splinter/runner"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,6 +34,7 @@ var MigratorCommands = map[string]*cobra.Command{
 				logger.Log.Info(query)
 			}
 
+			runner.Postgres("postgresql://pranjalverma:@127.0.0.1/migrations?sslmode=disable", constants.MIGRATION_UP)
 		},
 	},
 	"rollback": {

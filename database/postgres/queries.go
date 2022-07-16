@@ -1,6 +1,10 @@
 package postgres
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 func tableExists(tableName, schemaName string) string {
 	return fmt.Sprintf(`
@@ -54,4 +58,25 @@ func getLock(lockState bool) string {
 	return fmt.Sprintf(`
 		SELECT * FROM migrations_lock WHERE is_locked = %v;
 	`, lockState)
+}
+
+func insertSchemaMigrations(migrationFiles []string, batchNumber int) string {
+	var query strings.Builder
+	query.WriteString("INSERT INTO schema_migrations (migration_name, batch_number, created_at)  VALUES ")
+
+	for i := range migrationFiles {
+		query.WriteString(fmt.Sprintf("( %v , %v, %v)", migrationFiles[i], batchNumber, time.Now().Unix()))
+
+		if i < len(migrationFiles)-1 {
+			query.WriteString(" , ")
+		}
+	}
+
+	query.WriteString(";")
+
+	return query.String()
+}
+
+func deleteSchemaMigrations(batch int) string {
+	return fmt.Sprint("DELTE FROM schema_migrations WHERE batch = %v", batch)
 }
