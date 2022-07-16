@@ -1,3 +1,4 @@
 .env
 migrations
 bin/
+.vscode
