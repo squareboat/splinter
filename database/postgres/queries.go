@@ -38,7 +38,7 @@ func createMigrationLocksTable() string {
 
 func getMigrations() string {
 	return `
-		SELECT * FROM schema_migrations ORDER BY id DESC, migration_name ASC;
+		SELECT * FROM schema_migrations ORDER BY batch_number DESC, migration_name DESC;
 	`
 }
 
@@ -77,11 +77,6 @@ func insertSchemaMigrations(migrationFiles []string, batchNumber int) string {
 	return query.String()
 }
 
-func deleteSchemaMigrations(batch int) string {
-	return fmt.Sprintf("DELTE FROM schema_migrations WHERE batch = %v", batch)
-}
-
-func latestMigrationFile() string {
-	return `SELECT id, migration_name from schema_migrations 
-	ORDER BY batch_number DESC, migration_name DESC LIMIT 1`
+func deleteLatestSchemaMigrations(filename string) string {
+	return fmt.Sprintf("DELETE FROM schema_migrations WHERE migration_name = '%v'", filename)
 }

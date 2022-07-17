@@ -45,6 +45,7 @@ var MigratorCommands = map[string]*cobra.Command{
 		Long:    `Rollback the last migration that was applied to the database.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			logger.Log.Info("Running rollback")
+			runner.Postgres(config.GetDbUri(), constants.MIGRATION_DOWN)
 		},
 	},
 	"create": {
