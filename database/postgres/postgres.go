@@ -32,6 +32,7 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 	res, err := p.db.Query(query)
 	if err != nil {
 		logger.Log.WithError(err)
+		return err
 	}
 
 	for res.Next() {
