@@ -42,7 +42,7 @@ var MigratorCommands = map[string]*cobra.Command{
 		Use:     "rollback",
 		Short:   "Rollback all the migration.",
 		Aliases: []string{"down"},
-		Long:    `Rollback all the migration that are pending in the system to database.`,
+		Long:    `Rollback the last migration that was applied to the database.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			logger.Log.Info("Running rollback")
 			runner.Postgres(config.GetDbUri(), constants.MIGRATION_DOWN)
@@ -66,7 +66,7 @@ var MigratorCommands = map[string]*cobra.Command{
 		Use:     "config",
 		Short:   "Show specified config value.",
 		Long:    `Show specified config value.`,
-		Example: "splinter show <key1> <key2> <key3>",
+		Example: "splinter config <key1> <key2> <key3>\nsplinter config ",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
 				for key, value := range viper.AllSettings() {
@@ -84,7 +84,7 @@ func SetFlags(rootCmd *cobra.Command) {
 	// Sub Commands Flags Go Here
 
 	// Global Flags
-	rootCmd.PersistentFlags().String(constants.URI_FLAG, "", "connection URI DB")
+	rootCmd.PersistentFlags().String(constants.URI_FLAG, "", "DB Connection URI")
 	rootCmd.PersistentFlags().String(constants.USERNAME_FLAG, "", "DB Connection Username")
 	rootCmd.PersistentFlags().String(constants.PASSWORD_FLAG, "", "DB Connection Password")
 	rootCmd.PersistentFlags().String(constants.HOST_FLAG, "", "DB Connection Host")

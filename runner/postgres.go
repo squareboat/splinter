@@ -44,10 +44,12 @@ func Postgres(connURL, migrationType string) {
 		log.Fatal(err)
 	}
 
+
+
 	if len(migrationsToExec) > 0 {
 		err = driver.Migrate(ctx, migrationsToExec)
 		if err != nil {
-			log.Fatal(err)
+			logger.Log.WithError(err)
 		}
 	}
 

@@ -61,7 +61,7 @@ func onInit() {
 	for k, v := range viper.AllSettings() {
 		logger.Log.Infof("Config - %s : %#v", k, v)
 	}
-	config.LoadUserConfig()
+	config.Load()
 	MergeSplinterConfig()
 	CreateMigrationsPathIfNotExists()
 
