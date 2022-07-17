@@ -1,11 +1,14 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/the-e3n/splinter/constants"
+	"github.com/the-e3n/splinter/logger"
 	"github.com/the-e3n/splinter/utils"
 )
 
-type UserConfig struct {
+type userConfiguration struct {
 	host            string
 	port            int
 	user            string
@@ -16,10 +19,8 @@ type UserConfig struct {
 	migrations_path string
 }
 
-var userConfig = UserConfig{}
-
 // Loads user config
-func LoadUserConfig() {
+func (userConfig *userConfiguration) load() {
 	userConfig.host = utils.GetStringFromFlagOrConfig(constants.HOST, constants.HOST_FLAG)
 	userConfig.port = utils.GetIntFromFlagOrConfig(constants.PORT, constants.PORT_FLAG)
 	userConfig.user = utils.GetStringFromFlagOrConfig(constants.USER, constants.USERNAME_FLAG)
@@ -28,36 +29,7 @@ func LoadUserConfig() {
 	userConfig.driver = utils.GetStringFromFlagOrConfig(constants.DRIVER, constants.DRIVER_FLAG)
 	userConfig.uri = utils.GetStringFromFlagOrConfig(constants.URI, constants.URI_FLAG)
 	userConfig.migrations_path = utils.GetStringFromFlagOrConfig(constants.MIGRATIONS_PATH, constants.MIGRATION_PATH_FLAG)
-}
 
-func GetDbHost() string {
-	return userConfig.host
-}
-
-func GetDbPort() int {
-	return userConfig.port
-}
-
-func GetDbUser() string {
-	return userConfig.user
-}
-
-func GetDbPassword() string {
-	return userConfig.password
-}
-
-func GetDbName() string {
-	return userConfig.dbname
-}
-
-func GetDbDriver() string {
-	return userConfig.driver
-}
-
-func GetDbUri() string {
-	return userConfig.uri
-}
-
-func GetMigrationsPath() string {
-	return userConfig.migrations_path
+	logger.Log.Info("userConfig after load() ")
+	fmt.Printf("%+v", userConfig)
 }

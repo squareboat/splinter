@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/the-e3n/splinter/database/postgres"
+	"github.com/the-e3n/splinter/logger"
 	"github.com/the-e3n/splinter/parser"
 )
 
@@ -33,10 +34,11 @@ func Postgres(connURL, migrationType string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	if len(newMigrations) > 0 {
 		err = driver.Migrate(ctx, newMigrations)
 		if err != nil {
-			log.Fatal(err)
+			logger.Log.WithError(err)
 		}
 	}
 
