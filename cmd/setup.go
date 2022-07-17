@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/the-e3n/splinter/config"
 	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/logger"
 )
@@ -16,58 +18,80 @@ var rootCmd = &cobra.Command{
 		cmd.Help()
 	},
 }
-var configFile string
 
 func Execute() error {
 	return rootCmd.Execute()
 }
 
 func init() {
-	cobra.OnInitialize(onInit)
 
 	// Add SubCommands to Root Command
 	for _, cmd := range MigratorCommands {
 		rootCmd.AddCommand(cmd)
 	}
 	SetFlags(rootCmd)
+	cobra.OnInitialize(onInit)
 }
 
 func onInit() {
-
+	configFile := viper.GetString("config")
 	// Check if user provided config file exists
 	wd, _ := os.Getwd()
+
 	logger.Log.Info("Current working directory: ", wd)
 	exists, _ := os.Stat(configFile)
+
 	logger.Log.Info("Config file: ", configFile)
 	logger.Log.Info("Config file Exists")
 
 	if exists != nil {
-		// viper.SetEnvPrefix("")
+		viper.SetEnvPrefix(constants.SPLINTER_KEY_PREFIX)
 		viper.AddConfigPath(wd)
 		viper.SetConfigFile(configFile)
-		err := viper.ReadInConfig()
+		err := viper.MergeInConfig()
 		if err != nil {
 			logger.Log.Fatal("Error reading user config file, "+configFile, "\n", err)
 		}
 	} else {
+		logger.Log.Info("Config file does not exist. ", configFile)
 		logger.Log.Fatal("User Provided Config file not found.")
 		os.Exit(1)
 	}
-	LoadSplinterConfig()
+	logger.Log.Info()
+	for k, v := range viper.AllSettings() {
+		logger.Log.Infof("Config - %s : %#v", k, v)
+	}
+	config.LoadUserConfig()
+	MergeSplinterConfig()
+	CreateMigrationsPathIfNotExists()
 
 }
 
-func LoadSplinterConfig() {
+func MergeSplinterConfig() {
 	homeDir, osErr := os.UserHomeDir()
 	if osErr != nil {
 		logger.Log.Fatal("Error getting user home directory.")
 		os.Exit(1)
 	}
-	viper.SetConfigName(constants.CONFIG_FILE_NAME)
+	viper.SetConfigName(constants.SETTINGS_CONFIG_FILE_NAME)
 	viper.AddConfigPath(homeDir)
 	err := viper.MergeInConfig()
 	if err != nil {
 		logger.Log.Fatal("Error reading splinter config file. \n", err)
 	}
 	viper.AutomaticEnv()
+}
+
+func CreateMigrationsPathIfNotExists() {
+	migrationsPath := config.GetMigrationsPath()
+	if migrationsPath == "" {
+		log.Fatal("Migrations path is not set.")
+	}
+	_, err := os.Stat(migrationsPath)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(migrationsPath, 0755)
+		if err != nil {
+			logger.Log.Fatal("Error creating migrations path. \n", err)
+		}
+	}
 }
