@@ -39,19 +39,18 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 		res.Scan(&row)
 
 		tableExists, ok := row.(bool)
-		if ok {
-			// create table schema migrations
-			if !tableExists {
 
-				if _, err := p.db.Exec(createSchemaMigrations()); err != nil {
-					logger.Log.WithError(err).Error("error creating migration table")
-					return err
-				}
+		if !ok {
+			return errors.New("error reading schema_migrations table")
+		}
 
+		if !tableExists {
+
+			if _, err := p.db.Exec(createSchemaMigrations()); err != nil {
+				logger.Log.WithError(err).Error("error creating migration table")
+				return err
 			}
 
-		} else {
-			return errors.New("error reading schema_migrations table")
 		}
 	}
 
@@ -66,23 +65,23 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 		var row interface{}
 		migrationLockResponse.Scan(&row)
 		fmt.Println("migration response ", row)
-		if tableExists, ok := row.(bool); ok {
-			if !tableExists {
+		if tableExists, ok := row.(bool); ok && !tableExists {
+			// if !tableExists {
 
-				_, err = p.db.Exec(createMigrationLocksTable())
-				if err != nil {
-					logger.Log.WithError(err).Error("error creating migrations lock table")
-					return err
-				}
-
-				// insert lock row
-				_, err = p.db.Exec(insertMigrationLock())
-				if err != nil {
-					logger.Log.WithError(err)
-					return err
-				}
-
+			_, err = p.db.Exec(createMigrationLocksTable())
+			if err != nil {
+				logger.Log.WithError(err).Error("error creating migrations lock table")
+				return err
 			}
+
+			// insert lock row
+			_, err = p.db.Exec(insertMigrationLock())
+			if err != nil {
+				logger.Log.WithError(err)
+				return err
+			}
+
+			// }
 		}
 
 	}
@@ -224,7 +223,9 @@ func (p *Postgres) updateSchemaMigrations(migrationFiles []string) string {
 		query := insertSchemaMigrations(migrationFiles, p.latestBatchNumber+1)
 		logger.Log.Info("update ", query)
 		return query
-	} else if p.migrationType == constants.MIGRATION_DOWN {
+	}
+
+	if p.migrationType == constants.MIGRATION_DOWN {
 		return deleteSchemaMigrations(p.latestBatchNumber)
 	}
 
@@ -243,6 +244,7 @@ func (p *Postgres) Lock() error {
 		logger.Log.WithError(err)
 		return err
 	}
+	// TODO: handle if now rows found in migration locks table
 
 	for sqlRows.Next() {
 		var (
@@ -296,6 +298,7 @@ func (p *Postgres) Unlock() error {
 	if rowsAffected == 0 {
 		return errors.New("unable to remove lock. no locks found")
 	}
+
 	logger.Log.Info("migration lock removed successfully")
 	return nil
 }

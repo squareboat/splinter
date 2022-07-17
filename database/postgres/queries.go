@@ -80,3 +80,8 @@ func insertSchemaMigrations(migrationFiles []string, batchNumber int) string {
 func deleteSchemaMigrations(batch int) string {
 	return fmt.Sprintf("DELTE FROM schema_migrations WHERE batch = %v", batch)
 }
+
+func latestMigrationFile() string {
+	return `SELECT id, migration_name from schema_migrations 
+	ORDER BY batch_number DESC, migration_name DESC LIMIT 1`
+}
