@@ -5,10 +5,16 @@ import (
 	"log"
 
 	"github.com/the-e3n/splinter/database/postgres"
+	"github.com/the-e3n/splinter/logger"
 	"github.com/the-e3n/splinter/parser"
 )
 
 func Postgres(connURL, migrationType string) {
+	if migrationType == "" {
+		logger.Log.Error("invalid migration type")
+		return
+	}
+
 	ctx := context.TODO()
 	driver, err := postgres.NewPostgresDB(connURL, migrationType)
 	if err != nil {
@@ -28,13 +34,18 @@ func Postgres(connURL, migrationType string) {
 	}
 
 	// get migration files
-	migrationFiles, _ := parser.GetMigrationFileNames()
-	newMigrations, err := driver.CrossCheckMigrations(ctx, migrationFiles)
+	migrationFiles, err := parser.GetMigrationFileNames()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(newMigrations) > 0 {
-		err = driver.Migrate(ctx, newMigrations)
+
+	migrationsToExec, err := driver.CrossCheckMigrations(ctx, migrationFiles)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(migrationsToExec) > 0 {
+		err = driver.Migrate(ctx, migrationsToExec)
 		if err != nil {
 			log.Fatal(err)
 		}

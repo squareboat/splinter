@@ -94,9 +94,15 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 	// read from schema_migrations
 	// case 1 migration file does not exist in the table, then execute those migrations
 	// case 2 migration exists in database but does not exist in file system, then throw an error and mark the migration as dirty.
-	fmt.Println("cross checking migration files from DBc")
+
 	query := getMigrations()
 	isNewMigration := map[string]bool{}
+	maxBatchNumner := 0
+	migrations := []schemaMigration{}
+	latestMigrationFile := []string{}
+	firstIteration := true
+	newMigrations := []string{}
+
 	for i := range migrationFiles {
 		isNewMigration[migrationFiles[i]] = true
 	}
@@ -106,9 +112,6 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 		return nil, err
 	}
 
-	fmt.Println("sqlRows", sqlRows)
-	maxBatchNumner := 0
-	migrations := []schemaMigration{}
 	for sqlRows.Next() {
 		var (
 			id            int64
@@ -125,13 +128,18 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 		if batchNumber > maxBatchNumner {
 			maxBatchNumner = batchNumber
 		}
-
-		migrations = append(migrations, schemaMigration{
+		mig := schemaMigration{
 			migrationName: migrationName,
 			id:            id,
 			createdAt:     createdAt,
 			batchNumber:   batchNumber,
-		})
+		}
+		migrations = append(migrations, mig)
+
+		if firstIteration {
+			firstIteration = false
+			latestMigrationFile = append(latestMigrationFile, mig.migrationName)
+		}
 
 	}
 	p.latestBatchNumber = maxBatchNumner
@@ -143,14 +151,17 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 		}
 		isNewMigration[migrationFromDB.migrationName] = false
 	}
-	newMigrations := []string{}
+
 	for fileName, isNew := range isNewMigration {
 		if isNew {
 			newMigrations = append(newMigrations, fileName)
 		}
 	}
 
-	fmt.Println("New migrations", newMigrations)
+	if p.migrationType == constants.MIGRATION_DOWN {
+		return latestMigrationFile, nil
+	}
+
 	sort.Slice(newMigrations, func(i, j int) bool {
 		return newMigrations[j] > newMigrations[i]
 
@@ -163,7 +174,7 @@ func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 	transaction, err := p.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		logger.Log.WithError(err)
+		logger.Log.WithError(err).Error("error begin transaction")
 		return err
 	}
 
@@ -176,9 +187,6 @@ func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 			transaction.Rollback()
 			return err
 		}
-
-		logger.Log.Info("Executing from file **", filename)
-		fmt.Println("Queries ", queries)
 
 		for i := range queries {
 			q := queries[i]
@@ -220,6 +228,7 @@ func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 }
 
 func (p *Postgres) updateSchemaMigrations(migrationFiles []string) string {
+
 	if p.migrationType == constants.MIGRATION_UP {
 		query := insertSchemaMigrations(migrationFiles, p.latestBatchNumber+1)
 		logger.Log.Info("update ", query)
@@ -227,7 +236,7 @@ func (p *Postgres) updateSchemaMigrations(migrationFiles []string) string {
 	}
 
 	if p.migrationType == constants.MIGRATION_DOWN {
-		return deleteSchemaMigrations(p.latestBatchNumber)
+		return deleteLatestSchemaMigrations(migrationFiles[0])
 	}
 
 	return ""
