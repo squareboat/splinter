@@ -33,6 +33,12 @@ func Postgres(connURL, migrationType string) {
 		log.Fatal(err)
 	}
 
+	defer func() {
+		err = driver.Unlock()
+		if err != nil {
+			logger.Log.Error(err)
+		}
+	}()
 	// get migration files
 	migrationFiles, err := parser.GetMigrationFileNames()
 	if err != nil {
@@ -41,10 +47,9 @@ func Postgres(connURL, migrationType string) {
 
 	migrationsToExec, err := driver.CrossCheckMigrations(ctx, migrationFiles)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Error(err)
+		return
 	}
-
-
 
 	if len(migrationsToExec) > 0 {
 		err = driver.Migrate(ctx, migrationsToExec)
@@ -53,8 +58,4 @@ func Postgres(connURL, migrationType string) {
 		}
 	}
 
-	err = driver.Unlock()
-	if err != nil {
-		log.Fatal(err)
-	}
 }
