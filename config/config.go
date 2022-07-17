@@ -1,11 +1,5 @@
 package config
 
-import (
-	"fmt"
-
-	"github.com/the-e3n/splinter/logger"
-)
-
 type config struct {
 	userConfig userConfiguration
 }
@@ -14,8 +8,6 @@ var configuration = &config{}
 
 func Load() {
 	configuration.userConfig.load()
-	logger.Log.Info("After load")
-	fmt.Printf("%+v", configuration)
 }
 
 func GetDbHost() string {
