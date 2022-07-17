@@ -73,6 +73,7 @@ func stringParser(text string, remainingString *string) []string {
 	for {
 
 		if currIdx == -1 {
+			// TODO Find a better way to do this if possible
 			*remainingString = *remainingString + " " + text
 			return parsed
 		}
@@ -86,8 +87,8 @@ func stringParser(text string, remainingString *string) []string {
 		text = text[currIdx+1:]
 		currIdx = strings.Index(text, ";")
 		if remainingString != nil {
-			emptStr := ""
-			remainingString = &emptStr
+			// TODO Find a better way to do this if possible
+			*remainingString = ""
 		}
 	}
 }
