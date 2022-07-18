@@ -269,7 +269,7 @@ func (p *Postgres) Lock() error {
 
 		if isLocked {
 			logger.Log.Warn("migration table is already locked")
-			logger.Log.Fatal("Can't take lock to run migrations: Migration table is already locked")
+			return errors.New("can't take lock to run migrations: migration table is already locked")
 		}
 	}
 	// set is lock to true
@@ -277,7 +277,8 @@ func (p *Postgres) Lock() error {
 	query = updateMigrationLock(true)
 	sqlRes, err := p.db.Exec(query)
 	if err != nil {
-		logger.Log.Fatal(err)
+		logger.Log.Error(err)
+		return err
 	}
 
 	rowsAffected, err := sqlRes.RowsAffected()
