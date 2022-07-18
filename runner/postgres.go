@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/the-e3n/splinter/constants"
 	"github.com/the-e3n/splinter/database/postgres"
 	"github.com/the-e3n/splinter/logger"
 	"github.com/the-e3n/splinter/parser"
@@ -42,7 +43,8 @@ func Postgres(connURL, migrationType string) {
 	// get migration files
 	migrationFiles, err := parser.GetMigrationFileNames()
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Error(err)
+		return
 	}
 
 	migrationsToExec, err := driver.CrossCheckMigrations(ctx, migrationFiles)
@@ -51,6 +53,14 @@ func Postgres(connURL, migrationType string) {
 		return
 	}
 
+	if len(migrationsToExec) == 0 {
+		if migrationType == constants.MIGRATION_UP {
+			logger.Log.Warn("No new migrations found.")
+			return
+		}
+
+		logger.Log.Warn("No migrations found")
+	}
 	if len(migrationsToExec) > 0 {
 		err = driver.Migrate(ctx, migrationsToExec)
 		if err != nil {

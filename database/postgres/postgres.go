@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
@@ -147,7 +146,7 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 	for i := range migrations {
 		migrationFromDB := migrations[i]
 		if _, ok := isNewMigration[migrationFromDB.migrationName]; !ok {
-			log.Fatal("migration file from DB not found in yout path")
+			return nil, errors.New("some migration files  missing in your migration path")
 		}
 		isNewMigration[migrationFromDB.migrationName] = false
 	}
