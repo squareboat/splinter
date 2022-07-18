@@ -42,6 +42,26 @@ Usage :-
 | `help`            | displays help for particular command |  `none` |
 
 ## Commands Reference
+#### Create
+
+Create a new migration file.
+
+Usage:
+`splinter create [flags]`
+
+Examples:
+`splinter create <filename1> <filename2>`
+`splinter create create_user_table`
+Write your SQL in the files created.
+```
+[up]
+BEGIN;
+CREATE TABLE IF NOT EXISTS users (id int);
+COMMIT;
+[down]
+DROP TABLE IF EXISTS users;
+
+```
 
 #### Migrate
 
@@ -63,13 +83,3 @@ Usage:
 Aliases:
 `rollback, down`
 
-#### Create
-
-Create a new migration file.
-
-Usage:
-`splinter create [flags]`
-
-Examples:
-`splinter create <filename1> <filename2>`
-`splinter create create_user_table`
