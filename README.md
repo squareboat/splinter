@@ -14,7 +14,7 @@ Step 3. Run `make build` to build for your system.
 
 Step 4. Look for splinter binary in `./bin/splinter`. Copy this to path or use this as you want.
 
-Step 5. To add to the path run `mv .bin/splinter /usr/local/bin` (For MacOS).
+Step 5. To add to the path run `mv ./bin/splinter /usr/local/bin` (For MacOS).
 
 ### Config
 
