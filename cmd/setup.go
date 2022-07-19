@@ -77,7 +77,8 @@ func MergeSplinterConfig() {
 	viper.AddConfigPath(homeDir)
 	err := viper.MergeInConfig()
 	if err != nil {
-		logger.Log.Fatal("Error reading splinter config file. \n", err)
+		os.WriteFile(homeDir+"/"+constants.SETTINGS_CONFIG_FILE_NAME+".json", []byte("{}"), 0644)
+		logger.Log.Warn("Error reading splinter config file. Reseting..  \n", err)
 	}
 	viper.AutomaticEnv()
 }
