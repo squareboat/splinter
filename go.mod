@@ -1,4 +1,4 @@
-module github.com/the-e3n/splinter
+module github.com/squareboat/splinter
 
 go 1.18
 

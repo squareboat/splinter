@@ -1,9 +1,9 @@
 package config
 
 import (
-	"github.com/the-e3n/splinter/constants"
-	"github.com/the-e3n/splinter/logger"
-	"github.com/the-e3n/splinter/utils"
+	"github.com/squareboat/splinter/constants"
+	"github.com/squareboat/splinter/logger"
+	"github.com/squareboat/splinter/utils"
 )
 
 type userConfiguration struct {

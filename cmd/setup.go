@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/the-e3n/splinter/config"
-	"github.com/the-e3n/splinter/constants"
-	"github.com/the-e3n/splinter/logger"
+	"github.com/squareboat/splinter/config"
+	"github.com/squareboat/splinter/constants"
+	"github.com/squareboat/splinter/logger"
 )
 
 var rootCmd = &cobra.Command{
