@@ -16,6 +16,8 @@ Step 4. Look for splinter binary in `./bin/splinter`. Copy this to path or use t
 
 Step 5. To add to the path run `mv ./bin/splinter /usr/local/bin` (For MacOS).
 
+###### Note: You can also download prebuilt binaries from this repository's release page
+
 ### Config
 
 Splinter supports a wide variety of config file. Some of the formats that splinter supports are `.env,json,yaml,toml`.
@@ -29,10 +31,10 @@ Here is an example on how to provide the config file
 
 `splinter migrate --config configs/splinter.json`
 
-Note: Default location for config is `.env` in the folder from where you invoked splinter `splinter`
+Note: Default location for config is `splinter.yaml` in the folder from where you invoked splinter `splinter`
 
 For example if you are in `/home/user/projects/test` and you call `splinter migrate`
-spinter will look for `/home/user/projects/test/.env` file.
+spinter will look for `/home/user/projects/test/splinter.yaml` file.
 
 ## Config Reference
 
@@ -47,13 +49,13 @@ spinter will look for `/home/user/projects/test/.env` file.
 Usage :-
 `splinter [command] --[flag] <value>`
 
-| Flag              |             Description              | Default |
-| ----------------- | :----------------------------------: | ------: |
-| `driver`          |            same as config            |  `none` |
-| `uri`             |            same as config            |  `none` |
-| `migrations-path` |            same as config            |  `none` |
-| `config`          |   Path to the config for splitner    |  `.env` |
-| `help`            | displays help for particular command |  `none` |
+| Flag              |             Description              |         Default |
+| ----------------- | :----------------------------------: | --------------: |
+| `driver`          |            same as config            |          `none` |
+| `uri`             |            same as config            |          `none` |
+| `migrations-path` |            same as config            |          `none` |
+| `config`          |   Path to the config for splitner    | `splinter.yaml` |
+| `help`            | displays help for particular command |          `none` |
 
 ## Commands Reference
 
@@ -103,3 +105,17 @@ Usage:
 
 Aliases:
 `rollback, down`
+
+## Overriding Defaults
+
+Sometimes you may need to override the default values set in splinter.
+You can do this by creating a file in your home directory with following name `.splinter.yaml`
+
+Steps to create splinter config file :-
+
+1. Goto your home directory. (Run `cd` in MacOS and Linux)
+2. Run `touch .splinter.yaml` to create a file named `.splinter.yaml`
+
+| Key              |                                       Description                                       |         Default |
+| ---------------- | :-------------------------------------------------------------------------------------: | --------------: |
+| `default_config` | Either path to your config (relative/absolute) or just filename if in working directory | `splinter.yaml` |
