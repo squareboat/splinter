@@ -28,5 +28,5 @@ func (userConfig *userConfiguration) load() {
 	userConfig.uri = utils.GetStringFromFlagOrConfig(constants.URI, constants.URI_FLAG)
 	userConfig.migrations_path = utils.GetStringFromFlagOrConfig(constants.MIGRATIONS_PATH, constants.MIGRATION_PATH_FLAG)
 
-	logger.Log.Info("User Config Loaded Sucessfully.")
+	logger.Log.Debug("User Config Loaded Sucessfully.")
 }
