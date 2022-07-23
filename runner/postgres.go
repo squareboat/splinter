@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
-	"github.com/the-e3n/splinter/constants"
-	"github.com/the-e3n/splinter/database/postgres"
-	"github.com/the-e3n/splinter/logger"
-	"github.com/the-e3n/splinter/parser"
+	"github.com/squareboat/splinter/constants"
+	"github.com/squareboat/splinter/database/postgres"
+	"github.com/squareboat/splinter/logger"
+	"github.com/squareboat/splinter/parser"
 )
 
 func Postgres(connURL, migrationType string) {

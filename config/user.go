@@ -1,9 +1,9 @@
 package config
 
 import (
-	"github.com/the-e3n/splinter/constants"
-	"github.com/the-e3n/splinter/logger"
-	"github.com/the-e3n/splinter/utils"
+	"github.com/squareboat/splinter/constants"
+	"github.com/squareboat/splinter/logger"
+	"github.com/squareboat/splinter/utils"
 )
 
 type userConfiguration struct {
@@ -28,5 +28,5 @@ func (userConfig *userConfiguration) load() {
 	userConfig.uri = utils.GetStringFromFlagOrConfig(constants.URI, constants.URI_FLAG)
 	userConfig.migrations_path = utils.GetStringFromFlagOrConfig(constants.MIGRATIONS_PATH, constants.MIGRATION_PATH_FLAG)
 
-	logger.Log.Info("User Config Loaded Sucessfully.")
+	logger.Log.Debug("User Config Loaded Sucessfully.")
 }

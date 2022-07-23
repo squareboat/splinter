@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/the-e3n/splinter/config"
-	"github.com/the-e3n/splinter/constants"
-	"github.com/the-e3n/splinter/logger"
-	"github.com/the-e3n/splinter/parser"
-	"github.com/the-e3n/splinter/runner"
+	"github.com/squareboat/splinter/config"
+	"github.com/squareboat/splinter/constants"
+	"github.com/squareboat/splinter/logger"
+	"github.com/squareboat/splinter/parser"
+	"github.com/squareboat/splinter/runner"
+	"github.com/squareboat/splinter/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,20 +21,10 @@ var MigratorCommands = map[string]*cobra.Command{
 		Short:   "Run all the migration.",
 		Long:    `Run all the migration that are pending in the system to database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			totalQueries := []string{}
-			filenames, _ := parser.GetMigrationFileNames()
-			for _, filename := range filenames {
-				queries, err := parser.ParseFile(filename, constants.MIGRATION_UP)
-				if err != nil {
-					log.Fatal(err)
-				}
-				totalQueries = append(totalQueries, queries...)
+			if len(args) > 0 {
+				logger.Log.Infof("Migrating files %v", args)
+				// Run the migrations from the files passed in the command line
 			}
-			logger.Log.Info(fmt.Sprintf("Total Queries: %d", len(totalQueries)))
-			for _, query := range totalQueries {
-				logger.Log.Info(query)
-			}
-
 			runner.Postgres(config.GetDbUri(), constants.MIGRATION_UP)
 		},
 	},
@@ -82,6 +72,7 @@ var MigratorCommands = map[string]*cobra.Command{
 
 func SetFlags(rootCmd *cobra.Command) {
 	// Sub Commands Flags Go Here
+	MigratorCommands["rollback"].PersistentFlags().Int("n", 1, "Limit the number of rollback migrations.")
 
 	// Global Flags
 	rootCmd.PersistentFlags().String(constants.URI_FLAG, "", "DB Connection URI")
@@ -91,7 +82,7 @@ func SetFlags(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().Int(constants.PORT_FLAG, 0, "DB Connection Port")
 	rootCmd.PersistentFlags().String(constants.DB_NAME_FLAG, "", "DB Connection Database Name")
 	rootCmd.PersistentFlags().String(constants.MIGRATION_PATH_FLAG, constants.DEFAULT_MIGRATION_PATH, "Path Where Migrations are stored")
-	rootCmd.PersistentFlags().String(constants.USER_CONFIG_FLAG, constants.DEFAULT_USER_CONFIG_FILE, "Path of config file [env|YAML|JSON|TOML|INI]")
+	rootCmd.PersistentFlags().String(constants.USER_CONFIG_FLAG, utils.GetConfigFile(), "Path of config file [env|YAML|JSON|TOML|INI]")
 
 	// Bind Flags to viper in order to get the value of flags from command line
 	viper.BindPFlags(rootCmd.PersistentFlags())

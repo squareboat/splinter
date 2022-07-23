@@ -1,14 +1,16 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/the-e3n/splinter/config"
-	"github.com/the-e3n/splinter/constants"
-	"github.com/the-e3n/splinter/logger"
+	"github.com/squareboat/splinter/config"
+	"github.com/squareboat/splinter/constants"
+	"github.com/squareboat/splinter/logger"
+	"github.com/squareboat/splinter/utils"
 )
 
 var rootCmd = &cobra.Command{
@@ -24,25 +26,21 @@ func Execute() error {
 }
 
 func init() {
-
+	LoadSplinterConfig()
 	// Add SubCommands to Root Command
 	for _, cmd := range MigratorCommands {
 		rootCmd.AddCommand(cmd)
 	}
-	SetFlags(rootCmd)
 	cobra.OnInitialize(onInit)
+	SetFlags(rootCmd)
 }
 
 func onInit() {
-	configFile := viper.GetString("config")
+	configFile := utils.GetConfigFile()
 	// Check if user provided config file exists
 	wd, _ := os.Getwd()
-
-	logger.Log.Info("Current working directory: ", wd)
+	logger.Log.Debugf("Current working directory: %s", wd)
 	exists, _ := os.Stat(configFile)
-
-	logger.Log.Info("Config file: ", configFile)
-	logger.Log.Info("Config file Exists")
 
 	if exists != nil {
 		viper.SetEnvPrefix(constants.SPLINTER_KEY_PREFIX)
@@ -53,37 +51,39 @@ func onInit() {
 			logger.Log.Fatal("Error reading user config file, "+configFile, "\n", err)
 		}
 	} else {
-		logger.Log.Info("Config file does not exist. ", configFile)
-		logger.Log.Fatal("User Provided Config file not found.")
+		logger.Log.Fatal("Config file you provided does not exist. ", configFile)
 		os.Exit(1)
 	}
-	logger.Log.Info()
 	for k, v := range viper.AllSettings() {
-		logger.Log.Infof("Config - %s : %#v", k, v)
+		logger.Log.Debugf("Config - %s : %#v", k, v)
 	}
 	config.Load()
-	MergeSplinterConfig()
 	CreateMigrationsPathIfNotExists()
 
 }
 
-func MergeSplinterConfig() {
-	homeDir, osErr := os.UserHomeDir()
-	if osErr != nil {
-		logger.Log.Fatal("Error getting user home directory.")
-		os.Exit(1)
+func LoadSplinterConfig() {
+	logger.Log.Debug("Loading Splinter Config")
+	homeDir, homeDirErr := os.UserHomeDir()
+	if homeDirErr != nil {
+		logger.Log.Fatal("Error getting user home directory. \n", homeDirErr)
 	}
-	viper.SetConfigName(constants.SETTINGS_CONFIG_FILE_NAME)
-	viper.AddConfigPath(homeDir)
+	configPath := fmt.Sprintf("%s/%s", homeDir, constants.SETTINGS_CONFIG_FILE_NAME)
+	logger.Log.Debug("Config Path: ", configPath)
+	exists, _ := os.Stat(configPath)
+	if exists == nil {
+		logger.Log.Errorf("Splinter Config file not found. %v", configPath)
+	}
+	viper.SetConfigFile(configPath)
 	err := viper.MergeInConfig()
 	if err != nil {
-		os.WriteFile(homeDir+"/"+constants.SETTINGS_CONFIG_FILE_NAME+".json", []byte("{}"), 0644)
-		logger.Log.Warn("Error reading splinter config file. Reseting..  \n", err)
+		logger.Log.Fatalf("Error reading config file, %v \n %v", configPath, err)
 	}
 	viper.AutomaticEnv()
 }
 
 func CreateMigrationsPathIfNotExists() {
+	logger.Log.Debug("Creating Migrations Path if not exists")
 	migrationsPath := config.GetMigrationsPath()
 	if migrationsPath == "" {
 		log.Fatal("Migrations path is not set.")
@@ -95,4 +95,5 @@ func CreateMigrationsPathIfNotExists() {
 			logger.Log.Fatal("Error creating migrations path. \n", err)
 		}
 	}
+	logger.Log.Debug("Migrations Path: ", migrationsPath)
 }

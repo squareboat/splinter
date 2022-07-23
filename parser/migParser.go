@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/the-e3n/splinter/config"
-	"github.com/the-e3n/splinter/constants"
-	"github.com/the-e3n/splinter/logger"
+	"github.com/squareboat/splinter/config"
+	"github.com/squareboat/splinter/constants"
+	"github.com/squareboat/splinter/logger"
 )
 
 func GetMigrationFileNames() ([]string, error) {
