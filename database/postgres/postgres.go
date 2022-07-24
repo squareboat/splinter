@@ -182,7 +182,8 @@ func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 		// get queries in the file
 		queries, err := parser.ParseFile(filename, p.migrationType)
 		if err != nil {
-			logger.Log.WithError(err)
+			logger.Log.Errorf("error parsing file %s", filename)
+			logger.Log.Error(err)
 			transaction.Rollback()
 			return err
 		}

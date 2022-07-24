@@ -28,7 +28,7 @@ func GetMigrationFileNames() ([]string, error) {
 	return migrationFileNames, nil
 }
 
-func fileParser(lines []string, down bool) []string {
+func fileParser(lines []string, down bool) ([]string, error) {
 	var upArr []string
 	var downArr []string
 	var isUp bool
@@ -39,8 +39,12 @@ func fileParser(lines []string, down bool) []string {
 			isUp = true
 			continue
 		} else if strings.ToLower(text) == constants.MIGRATION_DOWN_IDENTIFIER {
+			remainingString = strings.Trim(remainingString, " \n")
+			if remainingString != "" {
+				return nil, fmt.Errorf("Found Extra query without ';' (semicolon) in %v section : %#v", constants.MIGRATION_UP_IDENTIFIER, remainingString)
+			}
 			if !down {
-				return upArr
+				return upArr, nil
 			}
 			isUp = false
 			continue
@@ -57,10 +61,14 @@ func fileParser(lines []string, down bool) []string {
 		}
 
 	}
-	if down {
-		return downArr
+	remainingString = strings.Trim(remainingString, " \n")
+	if remainingString != "" {
+		return nil, fmt.Errorf("found extra query without ';' (semicolon) in %v section : %#v", constants.MIGRATION_DOWN_IDENTIFIER, remainingString)
 	}
-	return upArr
+	if down {
+		return downArr, nil
+	}
+	return upArr, nil
 }
 
 func stringParser(text string, remainingString *string) []string {
@@ -102,8 +110,8 @@ func ParseFile(filename string, mode string) ([]string, error) {
 	}
 	strs := strings.Split(string(file), "\n")
 
-	queries := fileParser(strs, mode == constants.MIGRATION_DOWN)
-	return queries, nil
+	queries, err := fileParser(strs, mode == constants.MIGRATION_DOWN)
+	return queries, err
 }
 
 func CreateMigrationFile(names []string) {
