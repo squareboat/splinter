@@ -72,14 +72,14 @@ func LoadSplinterConfig() {
 	logger.Log.Debug("Config Path: ", configPath)
 	exists, _ := os.Stat(configPath)
 	if exists == nil {
-		logger.Log.Errorf("Splinter Config file not found. %v", configPath)
+		logger.Log.Infof("No Global Config File Found. %v", configPath)
+		return
 	}
 	viper.SetConfigFile(configPath)
 	err := viper.MergeInConfig()
 	if err != nil {
 		logger.Log.Fatalf("Error reading config file, %v \n %v", configPath, err)
 	}
-	viper.AutomaticEnv()
 }
 
 func CreateMigrationsPathIfNotExists() {

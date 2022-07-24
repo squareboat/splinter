@@ -3,7 +3,7 @@ package constants
 const (
 	HOST_FLAG           = "host"
 	PORT_FLAG           = "port"
-	USERNAME_FLAG       = "username"
+	USERNAME_FLAG       = "user"
 	PASSWORD_FLAG       = "password"
 	DB_NAME_FLAG        = "database"
 	DRIVER_FLAG         = "driver"

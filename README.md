@@ -38,11 +38,11 @@ spinter will look for `/home/user/projects/test/splinter.yaml` file.
 
 ## Config Reference
 
-| Key                        |                            Description                            |        Default |
-| -------------------------- | :---------------------------------------------------------------: | -------------: |
-| `SPLINTER_MIGRATIONS_PATH` |      location where splinter will look for migrations file.       | `./migrations` |
-| `SPLINTER_DRIVER`          |                 Which sql database are you using.                 |     `postgres` |
-| `SPLINTER_CONN_URI`        | A connection url for your databse. Should be based on your driver |         `none` |
+| Key               |                            Description                            |        Default |
+| ----------------- | :---------------------------------------------------------------: | -------------: |
+| `MIGRATIONS_PATH` |      location where splinter will look for migrations file.       | `./migrations` |
+| `DRIVER`          |                 Which sql database are you using.                 |     `postgres` |
+| `DB_URI`          | A connection url for your databse. Should be based on your driver |         `none` |
 
 ## Flags Reference
 
