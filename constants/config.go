@@ -1,12 +1,12 @@
 package constants
 
 const (
-	MIGRATIONS_PATH = "SPLINTER_MIGRATIONS_PATH"
-	DRIVER          = "SPLINTER_DRIVER"
-	HOST            = "SPLINTER_HOST"
-	PORT            = "SPLINTER_PORT"
-	USER            = "SPLINTER_USER"
-	PASSWORD        = "SPLINTER_PASSWORD"
-	DB_NAME         = "SPLINTER_DATABASE"
-	URI             = "SPLINTER_CONN_URI"
+	MIGRATIONS_PATH = "MIGRATIONS_PATH"
+	DRIVER          = "DRIVER"
+	HOST            = "HOST"
+	PORT            = "PORT"
+	USER            = "USER"
+	PASSWORD        = "PASSWORD"
+	DB_NAME         = "DATABASE"
+	URI             = "DB_URI"
 )
