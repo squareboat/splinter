@@ -69,3 +69,24 @@ func Postgres(connURL, migrationType string) {
 	}
 
 }
+func UnlockDB(connURL string) {
+	ctx := context.TODO()
+	driver, err := postgres.NewPostgresDB(connURL, constants.UNLOCK_DB)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	err = driver.Initialize(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Unlock DB
+	logger.Log.Info("Unlocking Database ...")
+	err = driver.Unlock()
+	if err != nil {
+		logger.Log.Error(err)
+	}
+
+}
