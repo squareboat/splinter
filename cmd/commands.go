@@ -30,7 +30,7 @@ var MigratorCommands = map[string]*cobra.Command{
 	},
 	"rollback": {
 		Use:     "rollback",
-		Short:   "Rollback all the migration.",
+		Short:   "Rollback the last migration.",
 		Aliases: []string{"down"},
 		Long:    `Rollback the last migration that was applied to the database.`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -66,6 +66,14 @@ var MigratorCommands = map[string]*cobra.Command{
 			for _, arg := range args {
 				fmt.Printf("Value of %s = %#v\n", arg, viper.GetString(arg))
 			}
+		},
+	},
+	"unlock": {
+		Use:   "unlock",
+		Short: "Unlock the database.",
+		Long:  `Unlock the database if in case previous locks were not removed due to a crash.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			runner.UnlockDB(config.GetDbUri())
 		},
 	},
 }
