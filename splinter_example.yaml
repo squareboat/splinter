@@ -1,0 +1,3 @@
+# MIGRATIONS_PATH: ./migrations
+# DRIVER: postgres
+# DB_URI: postgresql://postgres:postgres@127.0.0.1/postgres?sslmode=disable
