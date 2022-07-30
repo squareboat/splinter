@@ -168,6 +168,10 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 	return newMigrations, nil
 }
 
+func (p *Postgres) Close() error {
+	return p.db.Close()
+}
+
 // runs given set of SQL
 func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 	transaction, err := p.db.BeginTx(ctx, nil)

@@ -4,7 +4,8 @@ import "context"
 
 // a common driver interface that all db drivers will have to implement
 type Driver interface {
-
+	// Close connection to database
+	Close() error
 	// lock will update the migrations_lock table's entry
 	// if lock is already present that means some other process is executing a migraion or
 	// previos migrations errored out, either ways we cannot proceed with the migration
