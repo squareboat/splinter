@@ -110,5 +110,5 @@ func (m *Migrate) unlock() error {
 }
 
 func (m *Migrate) close() error {
-	return nil
+	return m.driver.Close()
 }
