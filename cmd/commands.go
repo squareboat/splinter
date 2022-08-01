@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/squareboat/splinter/config"
 	"github.com/squareboat/splinter/constants"
 	"github.com/squareboat/splinter/logger"
+	"github.com/squareboat/splinter/migrate"
 	"github.com/squareboat/splinter/parser"
 	"github.com/squareboat/splinter/runner"
 	"github.com/squareboat/splinter/utils"
@@ -25,7 +27,15 @@ var MigratorCommands = map[string]*cobra.Command{
 				logger.Log.Infof("Migrating files %v", args)
 				// Run the migrations from the files passed in the command line
 			}
-			runner.Postgres(config.GetDbUri(), constants.MIGRATION_UP)
+
+			migrator, err := migrate.NewMigrate(constants.MIGRATION_UP)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = migrator.Up()
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	"rollback": {

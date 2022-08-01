@@ -168,8 +168,19 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 // }
 
 // TODO implment CrossCheckMigrations
-func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrations []string, schemaMigratoins []database.SchemaMigration) (bool, error) {
-	panic("implement CrossCheckMigrations")
+func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrations []string, schemaMigrations []database.SchemaMigration) error {
+	if len(migrations) < len(schemaMigrations) {
+		return errors.New("missing migration files")
+	}
+
+	// order of files is guaranteed to be in sorted order
+	for i := range schemaMigrations {
+		if migrations[i] != schemaMigrations[i].MigrationName {
+			return fmt.Errorf("missing migration file found %v expecting %v", migrations[i], schemaMigrations[i].MigrationName)
+		}
+	}
+
+	return nil
 }
 
 func (p *Postgres) Close() error {
@@ -290,16 +301,7 @@ func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 
 	}
 
-	// updating schema migrations
-	_, err = transaction.Exec(p.updateSchemaMigrations(migrationFiles))
-	if err != nil {
-		logger.Log.WithError(err)
-		transaction.Rollback()
-		return err
-	}
-
 	logger.Log.Info("Commiting transaction")
-
 	err = transaction.Commit()
 	if err != nil {
 		logger.Log.WithError(err)
@@ -432,4 +434,14 @@ func NewPostgresDB(connectionURL, migrationType string) (database.Driver, error)
 	driver.migrationType = migrationType
 
 	return &driver, nil
+}
+
+func NewPostgresDriver(connectionURL string, migrationType string) (database.Driver, error) {
+	db, err := sql.Open("postgres", connectionURL)
+
+	if err != nil {
+		logger.Log.WithError(err)
+		return nil, err
+	}
+	return &Postgres{db: db, migrationType: migrationType}, nil
 }

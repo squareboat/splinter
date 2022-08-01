@@ -26,9 +26,9 @@ type Driver interface {
 
 	// crossCheckMigrations will match the migrations files in the file system with the files stored in schema_migrations
 	// the files that are not present in schema_migrations will be executed by RunMigration Method
-	CrossCheckMigrations(ctx context.Context, migrations []string, schemaMigratoins []SchemaMigration) (bool, error)
+	CrossCheckMigrations(ctx context.Context, migrations []string, schemaMigratoins []SchemaMigration) error
 
-	// RunMigration runs a given set of migrations and stores the migration file names in schema_migrations
+	// Migrate runs a given set of migrations
 	Migrate(ctx context.Context, migrationsFiles []string) error
 }
 
