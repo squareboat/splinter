@@ -37,6 +37,17 @@ func (m *Migrate) Up() error {
 		logger.Log.WithError(err)
 		return err
 	}
+	err = m.lock()
+	if err != nil {
+		logger.Log.WithError(err)
+		return err
+	}
+
+	defer func() {
+		m.unlock()
+		m.close()
+	}()
+
 	migrations, err := m.driver.GetSchemaMigrations()
 	if err != nil {
 		logger.Log.Error(err)
@@ -47,8 +58,6 @@ func (m *Migrate) Up() error {
 		logger.Log.Error(err)
 		return err
 	}
-	logger.Log.Info("migrations from files", migrationFiles)
-	logger.Log.Info("migrations from db", migrations)
 	err = m.driver.CrossCheckMigrations(context.Background(), migrationFiles, migrations)
 	if err != nil {
 		logger.Log.Warn("error cross checking migrations")
@@ -92,11 +101,12 @@ func (m *Migrate) Down() error {
 }
 
 func (m *Migrate) lock() error {
-	return nil
+	return m.driver.Lock()
+
 }
 
 func (m *Migrate) unlock() error {
-	return nil
+	return m.driver.Unlock()
 }
 
 func (m *Migrate) close() error {
