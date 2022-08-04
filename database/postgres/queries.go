@@ -40,7 +40,7 @@ func createMigrationLocksTable() string {
 
 func getMigrations() string {
 	return `
-		SELECT * FROM schema_migrations ORDER BY batch_number DESC, migration_name DESC;
+		SELECT * FROM schema_migrations ORDER BY  migration_name ASC;
 	`
 }
 
@@ -105,12 +105,12 @@ func deleteFromSchemaMigrations(migrations []database.SchemaMigration) string {
 	var inClause strings.Builder
 
 	for i, mig := range migrations {
-		inClause.WriteString(mig.MigrationName)
+		inClause.WriteString(fmt.Sprintf(" '%v' ", mig.MigrationName))
 		if i < len(migrations)-1 {
 			inClause.WriteString(" , ")
 		}
 	}
 
-	query := fmt.Sprintf("DELETE FROM schema_migrations WHERE migration_name IN ( %v )", inClause)
+	query := fmt.Sprintf("DELETE FROM schema_migrations WHERE migration_name IN ( %v )", inClause.String())
 	return query
 }

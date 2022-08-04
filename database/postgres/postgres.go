@@ -173,10 +173,15 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrations []string
 		return errors.New("missing migration files")
 	}
 
+	migrationsFilesMap := map[string]bool{}
+	for i := range migrations {
+		migrationsFilesMap[migrations[i]] = true
+	}
+
 	// order of files is guaranteed to be in sorted order
 	for i := range schemaMigrations {
-		if migrations[i] != schemaMigrations[i].MigrationName {
-			return fmt.Errorf("missing migration file found %v expecting %v", migrations[i], schemaMigrations[i].MigrationName)
+		if _, ok := migrationsFilesMap[schemaMigrations[i].MigrationName]; !ok {
+			return fmt.Errorf("missing migration file %v", schemaMigrations[i].MigrationName)
 		}
 	}
 
@@ -238,6 +243,7 @@ func (p *Postgres) UpdateSchemaMigrations(migrations []database.SchemaMigration,
 
 	if migrationType == constants.MIGRATION_DOWN {
 		query := deleteFromSchemaMigrations(migrations)
+		logger.Log.Info("query ", query)
 		err := p.execQuery(query)
 		if err != nil {
 			logger.Log.WithError(err).Error(debug)
