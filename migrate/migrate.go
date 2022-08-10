@@ -61,8 +61,6 @@ func (m *Migrate) Up() error {
 		logger.Log.Error(err)
 		return err
 	}
-	logger.Log.Info("Migration from files ", migrationFiles)
-	logger.Log.Info("Schema Migations ", migrations)
 	err = m.driver.CrossCheckMigrations(context.Background(), migrationFiles, migrations)
 	if err != nil {
 		logger.Log.Warn("error cross checking migrations")
@@ -198,4 +196,8 @@ func getNewMigrations(migrationFiles []string, schemaMigrations []database.Schem
 
 func getRollbacks(count int, schemaMigrations []database.SchemaMigration) []string {
 	return []string{schemaMigrations[len(schemaMigrations)-1].MigrationName}
+}
+
+func (m *Migrate) Release() error {
+	return m.driver.Unlock()
 }
