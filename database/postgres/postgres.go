@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -89,22 +88,113 @@ func (p *Postgres) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []string) ([]string, error) {
-	// read from schema_migrations
-	// case 1 migration file does not exist in the table, then execute those migrations
-	// case 2 migration exists in database but does not exist in file system, then throw an error and mark the migration as dirty.
+// func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []string) ([]string, error) {
+// 	// read from schema_migrations
+// 	// case 1 migration file does not exist in the table, then execute those migrations
+// 	// case 2 migration exists in database but does not exist in file system, then throw an error and mark the migration as dirty.
 
-	query := getMigrations()
-	isNewMigration := map[string]bool{}
-	maxBatchNumner := 0
-	migrations := []schemaMigration{}
-	latestMigrationFile := []string{}
-	firstIteration := true
-	newMigrations := []string{}
+// 	query := getMigrations()
+// 	isNewMigration := map[string]bool{}
+// 	maxBatchNumner := 0
+// 	migrations := []schemaMigration{}
+// 	latestMigrationFile := []string{}
+// 	firstIteration := true
+// 	newMigrations := []string{}
 
-	for i := range migrationFiles {
-		isNewMigration[migrationFiles[i]] = true
+// 	for i := range migrationFiles {
+// 		isNewMigration[migrationFiles[i]] = true
+// 	}
+// 	sqlRows, err := p.db.Query(query)
+// 	if err != nil {
+// 		logger.Log.WithError(err)
+// 		return nil, err
+// 	}
+
+// 	for sqlRows.Next() {
+// 		var (
+// 			id            int64
+// 			migrationName string
+// 			batchNumber   int
+// 			createdAt     int64
+// 		)
+
+// 		if err = sqlRows.Scan(&id, &migrationName, &batchNumber, &createdAt); err != nil {
+// 			logger.Log.WithError(err)
+// 			return nil, err
+// 		}
+
+// 		if batchNumber > maxBatchNumner {
+// 			maxBatchNumner = batchNumber
+// 		}
+// 		mig := schemaMigration{
+// 			migrationName: migrationName,
+// 			id:            id,
+// 			createdAt:     createdAt,
+// 			batchNumber:   batchNumber,
+// 		}
+// 		migrations = append(migrations, mig)
+
+// 		if firstIteration {
+// 			firstIteration = false
+// 			latestMigrationFile = append(latestMigrationFile, mig.migrationName)
+// 		}
+
+// 	}
+// 	p.latestBatchNumber = maxBatchNumner
+
+// 	for i := range migrations {
+// 		migrationFromDB := migrations[i]
+// 		if _, ok := isNewMigration[migrationFromDB.migrationName]; !ok {
+// 			return nil, errors.New("some migration files  missing in your migration path")
+// 		}
+// 		isNewMigration[migrationFromDB.migrationName] = false
+// 	}
+
+// 	for fileName, isNew := range isNewMigration {
+// 		if isNew {
+// 			newMigrations = append(newMigrations, fileName)
+// 		}
+// 	}
+
+// 	if p.migrationType == constants.MIGRATION_DOWN {
+// 		return latestMigrationFile, nil
+// 	}
+
+// 	sort.Slice(newMigrations, func(i, j int) bool {
+// 		return newMigrations[j] > newMigrations[i]
+
+// 	})
+// 	return newMigrations, nil
+// }
+
+// TODO implment CrossCheckMigrations
+func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrations []string, schemaMigrations []database.SchemaMigration) error {
+	if len(migrations) < len(schemaMigrations) {
+		return errors.New("missing migration files")
 	}
+
+	migrationsFilesMap := map[string]bool{}
+	for i := range migrations {
+		migrationsFilesMap[migrations[i]] = true
+	}
+
+	// order of files is guaranteed to be in sorted order
+	for i := range schemaMigrations {
+		if _, ok := migrationsFilesMap[schemaMigrations[i].MigrationName]; !ok {
+			return fmt.Errorf("missing migration file %v", schemaMigrations[i].MigrationName)
+		}
+	}
+
+	return nil
+}
+
+func (p *Postgres) Close() error {
+	return p.db.Close()
+}
+
+func (p *Postgres) GetSchemaMigrations() ([]database.SchemaMigration, error) {
+	query := getMigrations()
+	result := []database.SchemaMigration{}
 	sqlRows, err := p.db.Query(query)
 	if err != nil {
 		logger.Log.WithError(err)
@@ -124,48 +214,56 @@ func (p *Postgres) CrossCheckMigrations(ctx context.Context, migrationFiles []st
 			return nil, err
 		}
 
-		if batchNumber > maxBatchNumner {
-			maxBatchNumner = batchNumber
+		mig := database.SchemaMigration{
+			MigrationName: migrationName,
+			ID:            id,
+			CreatedAt:     createdAt,
+			BatchNumber:   batchNumber,
 		}
-		mig := schemaMigration{
-			migrationName: migrationName,
-			id:            id,
-			createdAt:     createdAt,
-			batchNumber:   batchNumber,
-		}
-		migrations = append(migrations, mig)
-
-		if firstIteration {
-			firstIteration = false
-			latestMigrationFile = append(latestMigrationFile, mig.migrationName)
-		}
+		result = append(result, mig)
 
 	}
-	p.latestBatchNumber = maxBatchNumner
 
-	for i := range migrations {
-		migrationFromDB := migrations[i]
-		if _, ok := isNewMigration[migrationFromDB.migrationName]; !ok {
-			return nil, errors.New("some migration files  missing in your migration path")
+	return result, nil
+
+}
+
+func (p *Postgres) UpdateSchemaMigrations(migrations []database.SchemaMigration, migrationType string) error {
+	debug := "error updaing schema migrations"
+
+	if migrationType == constants.MIGRATION_UP {
+		query := updateSchemaMigrations(migrations)
+		err := p.execQuery(query)
+		if err != nil {
+			logger.Log.WithError(err).Error(debug)
+			return err
 		}
-		isNewMigration[migrationFromDB.migrationName] = false
+		return nil
 	}
 
-	for fileName, isNew := range isNewMigration {
-		if isNew {
-			newMigrations = append(newMigrations, fileName)
+	if migrationType == constants.MIGRATION_DOWN {
+		query := deleteFromSchemaMigrations(migrations)
+		logger.Log.Info("query ", query)
+		err := p.execQuery(query)
+		if err != nil {
+			logger.Log.WithError(err).Error(debug)
+			return err
 		}
+		return nil
 	}
 
-	if p.migrationType == constants.MIGRATION_DOWN {
-		return latestMigrationFile, nil
+	return errors.New("invalid migrtion type")
+}
+
+func (p *Postgres) execQuery(q string) error {
+	_, err := p.db.Exec(q)
+	if err != nil {
+		logger.Log.Error(err)
+		return err
 	}
 
-	sort.Slice(newMigrations, func(i, j int) bool {
-		return newMigrations[j] > newMigrations[i]
+	return nil
 
-	})
-	return newMigrations, nil
 }
 
 // runs given set of SQL
@@ -209,16 +307,7 @@ func (p *Postgres) Migrate(ctx context.Context, migrationFiles []string) error {
 
 	}
 
-	// updating schema migrations
-	_, err = transaction.Exec(p.updateSchemaMigrations(migrationFiles))
-	if err != nil {
-		logger.Log.WithError(err)
-		transaction.Rollback()
-		return err
-	}
-
 	logger.Log.Info("Commiting transaction")
-
 	err = transaction.Commit()
 	if err != nil {
 		logger.Log.WithError(err)
@@ -351,4 +440,14 @@ func NewPostgresDB(connectionURL, migrationType string) (database.Driver, error)
 	driver.migrationType = migrationType
 
 	return &driver, nil
+}
+
+func NewPostgresDriver(connectionURL string, migrationType string) (database.Driver, error) {
+	db, err := sql.Open("postgres", connectionURL)
+
+	if err != nil {
+		logger.Log.WithError(err)
+		return nil, err
+	}
+	return &Postgres{db: db, migrationType: migrationType}, nil
 }
