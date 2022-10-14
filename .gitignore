@@ -2,3 +2,4 @@
 migrations
 bin/
 .vscode
+splinter.yaml

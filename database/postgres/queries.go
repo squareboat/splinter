@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/squareboat/splinter/database"
 )
 
 func tableExists(tableName, schemaName string) string {
@@ -38,7 +40,7 @@ func createMigrationLocksTable() string {
 
 func getMigrations() string {
 	return `
-		SELECT * FROM schema_migrations ORDER BY batch_number DESC, migration_name DESC;
+		SELECT * FROM schema_migrations ORDER BY  migration_name ASC;
 	`
 }
 
@@ -79,4 +81,36 @@ func insertSchemaMigrations(migrationFiles []string, batchNumber int) string {
 
 func deleteLatestSchemaMigrations(filename string) string {
 	return fmt.Sprintf("DELETE FROM schema_migrations WHERE migration_name = '%v'", filename)
+}
+
+func updateSchemaMigrations(migrations []database.SchemaMigration) string {
+	var query strings.Builder
+
+	query.WriteString("INSERT INTO schema_migrations (migration_name, batch_number, created_at)  VALUES ")
+
+	for i := range migrations {
+		mig := migrations[i]
+		query.WriteString(fmt.Sprintf("( '%v' , %v, %v)", mig.MigrationName, mig.BatchNumber, time.Now().Unix()))
+
+		if i < len(migrations)-1 {
+			query.WriteString(" , ")
+		}
+	}
+
+	return query.String()
+}
+
+func deleteFromSchemaMigrations(migrations []database.SchemaMigration) string {
+
+	var inClause strings.Builder
+
+	for i, mig := range migrations {
+		inClause.WriteString(fmt.Sprintf(" '%v' ", mig.MigrationName))
+		if i < len(migrations)-1 {
+			inClause.WriteString(" , ")
+		}
+	}
+
+	query := fmt.Sprintf("DELETE FROM schema_migrations WHERE migration_name IN ( %v )", inClause.String())
+	return query
 }

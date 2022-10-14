@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/squareboat/splinter/config"
 	"github.com/squareboat/splinter/constants"
 	"github.com/squareboat/splinter/logger"
+	"github.com/squareboat/splinter/migrate"
 	"github.com/squareboat/splinter/parser"
-	"github.com/squareboat/splinter/runner"
 	"github.com/squareboat/splinter/utils"
 
 	"github.com/spf13/cobra"
@@ -25,7 +25,15 @@ var MigratorCommands = map[string]*cobra.Command{
 				logger.Log.Infof("Migrating files %v", args)
 				// Run the migrations from the files passed in the command line
 			}
-			runner.Postgres(config.GetDbUri(), constants.MIGRATION_UP)
+
+			migrator, err := migrate.NewMigrate(constants.MIGRATION_UP)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = migrator.Up()
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	"rollback": {
@@ -34,8 +42,15 @@ var MigratorCommands = map[string]*cobra.Command{
 		Aliases: []string{"down"},
 		Long:    `Rollback the last migration that was applied to the database.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			logger.Log.Info("Running rollback")
-			runner.Postgres(config.GetDbUri(), constants.MIGRATION_DOWN)
+
+			migrator, err := migrate.NewMigrate(constants.MIGRATION_DOWN)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = migrator.Down()
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 	"create": {
@@ -73,7 +88,14 @@ var MigratorCommands = map[string]*cobra.Command{
 		Short: "Unlock the database.",
 		Long:  `Unlock the database if in case previous locks were not removed due to a crash.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runner.UnlockDB(config.GetDbUri())
+			migrator, err := migrate.NewMigrate(constants.MIGRATION_DOWN)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = migrator.Release()
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	},
 }
